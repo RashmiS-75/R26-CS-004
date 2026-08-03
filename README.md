@@ -1,7 +1,7 @@
 # Firewall Risk Scoring Engine
 
 **Component**: Intelligent Firewall Log Risk Scoring Engine  
-**Student**: [Your Name]  
+**Student**: Rathnayaka R.M.R.S
 **Branch**: it22156860  
 
 ## Risk Calculation Formula
