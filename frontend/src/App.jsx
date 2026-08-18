@@ -4,6 +4,7 @@ import {
   BarChart3, Settings, Bell, Moon, Sun
 } from 'lucide-react'
 import audixaLogo from './assets/g.png'
+import BatchAnalysisPage from './features/log-classification/pages/BatchAnalysisPage'
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
@@ -169,14 +170,7 @@ function App() {
             />
           )}
 
-          {activeTab === 'log-classification' && (
-            <Placeholder
-              title="Log Classification"
-              desc="Owner: it22231000. This module is under development."
-              icon={<FileText size={48} />}
-              darkMode={darkMode}
-            />
-          )}
+          {activeTab === 'log-classification' && <BatchAnalysisPage />}
 
           {activeTab === 'reports' && (
             <Placeholder
