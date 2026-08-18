@@ -55,7 +55,7 @@ export default function BatchAnalysisPage() {
             onClick={reset}
             className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs rounded-xl bg-white border border-gray-300 font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer shadow-xs"
           >
-            <X className="w-3.5 h-3.5" /> Start New Batch
+            <X className="w-3.5 h-3.5" /> Reset
           </button>
         )}
       </div>
@@ -121,6 +121,21 @@ export default function BatchAnalysisPage() {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stage: Parsing */}
+      {stage === 'parsing' && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-xs text-gray-700 font-medium w-fit">
+            {fileIcon(fileName)}
+            <span>Uploaded File:</span>
+            <span className="font-bold font-mono text-gray-900">{fileName}</span>
+          </div>
+          <div className="rounded-2xl bg-white border border-gray-200 p-8 shadow-xs flex items-center justify-center gap-3 text-center">
+            <div className="w-6 h-6 border-3 border-[#4A5C2E] border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm text-gray-800 font-bold">Reading and Parsing File...</span>
           </div>
         </div>
       )}

@@ -5,7 +5,7 @@ import { predictBatch } from '../utils/predict';
 
 // Manages the batch upload lifecycle: parse -> validate columns -> predict.
 export function useCSVUpload() {
-  const [stage, setStage] = useState('idle'); // idle | validating | loading | results | error
+  const [stage, setStage] = useState('idle'); // idle | parsing | validating | loading | results | error
   const [fileName, setFileName] = useState('');
   const [presentColumns, setPresentColumns] = useState([]);
   const [validationError, setValidationError] = useState(false);
@@ -35,12 +35,14 @@ export function useCSVUpload() {
       }
 
       setFileName(file.name);
-      setStage('validating');
+      setStage('parsing');
       setValidationError(false);
+      setPresentColumns([]);
 
       try {
         const { cols, rows } = await parseLogFile(file);
         setPresentColumns(cols);
+        setStage('validating');
 
         const missing = REQUIRED_COLUMNS.filter((c) => !cols.includes(c));
         if (missing.length > 0) {
