@@ -1,0 +1,53 @@
+{
+  "numeric_features": [
+    "Source Port",
+    "Destination Port",
+    "Packet Length",
+    "Anomaly Scores",
+    "Has_Malware_Indicator",
+    "Has_Alert_Warning",
+    "Has_Proxy",
+    "Has_Firewall_Log",
+    "Has_IDS_IPS_Alert"
+  ],
+  "categorical_features": [
+    "Protocol",
+    "Packet Type",
+    "Traffic Type",
+    "Action Taken",
+    "Network Segment"
+  ],
+  "categorical_values": {
+    "Protocol": [
+      "ICMP",
+      "TCP",
+      "UDP"
+    ],
+    "Packet Type": [
+      "Control",
+      "Data"
+    ],
+    "Traffic Type": [
+      "DNS",
+      "FTP",
+      "HTTP"
+    ],
+    "Action Taken": [
+      "Blocked",
+      "Ignored",
+      "Logged"
+    ],
+    "Network Segment": [
+      "Segment A",
+      "Segment B",
+      "Segment C"
+    ]
+  },
+  "targets": {
+    "Severity Level": [
+      "High",
+      "Low",
+      "Medium"
+    ]
+  }
+}

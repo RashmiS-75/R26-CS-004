@@ -13,3 +13,7 @@ dist/
 build/
 .vscode/
 .idea/
+
+# Log Classification Engine: track its committed model artifacts
+!services/log-classification/artifacts/*.joblib
+!services/log-classification/artifacts/*.csv
