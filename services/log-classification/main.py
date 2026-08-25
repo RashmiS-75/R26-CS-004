@@ -1,12 +1,18 @@
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 import joblib
 import json
 import pandas as pd
-from fastapi import FastAPI
+from bson import ObjectId
+from bson.errors import InvalidId
+from pymongo.errors import PyMongoError
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
+
+from database import sessions_collection
 
 ART = Path("artifacts")
 model       = joblib.load(ART / "model.joblib")
@@ -62,6 +68,29 @@ class FirewallLogEntry(BaseModel):
 
 class PredictionResponse(BaseModel):
     severity: str
+
+
+class SessionSaveRequest(BaseModel):
+    filename: str
+    total_logs: int
+    high_count: int
+    medium_count: int
+    low_count: int
+    predictions: list[dict[str, Any]]
+
+
+class SessionSummary(BaseModel):
+    id: str
+    filename: str
+    uploaded_at: datetime
+    total_logs: int
+    high_count: int
+    medium_count: int
+    low_count: int
+
+
+class SessionDetail(SessionSummary):
+    predictions: list[dict[str, Any]]
 
 def _is_present(value) -> int:
     if value is None:
@@ -142,3 +171,76 @@ def predict_batch(entries: list[FirewallLogEntry]):
         )
         for p in preds
     ]
+
+
+def _parse_session_id(session_id: str) -> ObjectId:
+    try:
+        return ObjectId(session_id)
+    except (InvalidId, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid session id")
+
+
+@app.post("/sessions/save")
+def save_session(session: SessionSaveRequest):
+    """Save a batch prediction session for later retrieval in Upload History."""
+    doc = session.model_dump()
+    doc["uploaded_at"] = datetime.now(timezone.utc)
+    try:
+        result = sessions_collection.insert_one(doc)
+    except PyMongoError:
+        raise HTTPException(status_code=503, detail="Cannot connect to the database.")
+    return {"id": str(result.inserted_id)}
+
+
+@app.get("/sessions", response_model=list[SessionSummary])
+def list_sessions():
+    """List all saved sessions (summary fields only), newest first."""
+    try:
+        docs = list(sessions_collection.find({}, {"predictions": 0}).sort("uploaded_at", -1))
+    except PyMongoError:
+        raise HTTPException(status_code=503, detail="Cannot connect to the database.")
+    return [
+        SessionSummary(
+            id=str(doc["_id"]),
+            filename=doc["filename"],
+            uploaded_at=doc["uploaded_at"],
+            total_logs=doc["total_logs"],
+            high_count=doc["high_count"],
+            medium_count=doc["medium_count"],
+            low_count=doc["low_count"],
+        )
+        for doc in docs
+    ]
+
+
+@app.get("/sessions/{session_id}", response_model=SessionDetail)
+def get_session(session_id: str):
+    """Return one full session, including its predictions array."""
+    try:
+        doc = sessions_collection.find_one({"_id": _parse_session_id(session_id)})
+    except PyMongoError:
+        raise HTTPException(status_code=503, detail="Cannot connect to the database.")
+    if doc is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return SessionDetail(
+        id=str(doc["_id"]),
+        filename=doc["filename"],
+        uploaded_at=doc["uploaded_at"],
+        total_logs=doc["total_logs"],
+        high_count=doc["high_count"],
+        medium_count=doc["medium_count"],
+        low_count=doc["low_count"],
+        predictions=doc["predictions"],
+    )
+
+
+@app.delete("/sessions/{session_id}")
+def delete_session(session_id: str):
+    """Permanently delete one session by id."""
+    try:
+        result = sessions_collection.delete_one({"_id": _parse_session_id(session_id)})
+    except PyMongoError:
+        raise HTTPException(status_code=503, detail="Cannot connect to the database.")
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {"deleted": True}
