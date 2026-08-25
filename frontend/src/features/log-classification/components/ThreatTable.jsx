@@ -10,7 +10,7 @@ const sampleData = [
   { sourcePort: '23456', destinationPort: '110', protocol: 'UDP', action: 'ALLOW', trafficType: 'POP3', severity: 'Medium' },
 ];
 
-export default function ThreatTable({ rows = [] }) {
+export default function ThreatTable({ rows = [], darkMode = false }) {
   const [search, setSearch] = useState('');
   const [severityFilter, setSeverityFilter] = useState('All');
   const [selectedRow, setSelectedRow] = useState(null);
@@ -63,20 +63,61 @@ export default function ThreatTable({ rows = [] }) {
     return filteredItems.slice(start, start + pageSize);
   }, [filteredItems, safePage]);
 
+  const cardBg = darkMode ? 'bg-[#1A2218]' : 'bg-white';
+  const cardBorder = darkMode ? 'border-[#2A3526]' : 'border-gray-200';
+  const borderLight = darkMode ? 'border-[#232F1E]' : 'border-gray-100';
+  const textPrimary = darkMode ? 'text-gray-100' : 'text-gray-900';
+  const textBody = darkMode ? 'text-gray-200' : 'text-gray-800';
+  const textMuted = darkMode ? 'text-gray-300' : 'text-gray-700';
+  const textSecondary = darkMode ? 'text-gray-400' : 'text-gray-500';
+  const textFaint = darkMode ? 'text-gray-500' : 'text-gray-400';
+  const inputBg = darkMode
+    ? 'bg-[#141A11] border-[#2A3526] hover:border-[#354230] text-gray-200 placeholder:text-gray-500'
+    : 'bg-gray-50 border-gray-200 hover:border-gray-300 text-gray-800 placeholder:text-gray-400';
+  const selectBg = darkMode
+    ? 'bg-[#141A11] border-[#2A3526] hover:border-[#354230] text-gray-300'
+    : 'bg-gray-50 border-gray-200 hover:border-gray-300 text-gray-700';
+  const theadBg = darkMode ? 'border-y border-[#232F1E] bg-[#141A11] text-gray-400' : 'border-y border-gray-100 bg-gray-50/50 text-gray-500';
+  const rowHover = darkMode ? 'hover:bg-[#212B1B]/80' : 'hover:bg-gray-50/80';
+  const eyeBtn = darkMode
+    ? 'text-gray-500 hover:text-gray-200 hover:bg-[#232F1E]'
+    : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100';
+  const pagerBtn = darkMode
+    ? 'border-[#2A3526] text-gray-400 hover:bg-[#212B1B]'
+    : 'border-gray-200 text-gray-500 hover:bg-gray-50';
+  const pageNumBtn = darkMode
+    ? 'text-gray-300 border-[#2A3526] hover:bg-[#212B1B]'
+    : 'text-gray-600 border-gray-200 hover:bg-gray-50';
+
+  const severityPillClass = (severity) => {
+    if (darkMode) {
+      return severity === 'High'
+        ? 'bg-red-500/15 text-red-400'
+        : severity === 'Medium'
+        ? 'bg-amber-500/15 text-amber-400'
+        : 'bg-emerald-500/15 text-emerald-400';
+    }
+    return severity === 'High'
+      ? 'bg-red-100/80 text-red-700'
+      : severity === 'Medium'
+      ? 'bg-amber-100/80 text-amber-800'
+      : 'bg-emerald-100/80 text-emerald-800';
+  };
+
   return (
-    <div className="rounded-2xl bg-white border border-gray-200 shadow-xs overflow-hidden">
+    <div className={`rounded-2xl ${cardBg} border ${cardBorder} shadow-xs overflow-hidden`}>
       {/* Header and Filter Bar */}
       <div className="p-6 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h3 className="font-bold text-gray-900 text-sm">Classified Firewall Logs</h3>
-          <p className="text-xs text-gray-500 mt-0.5">Latest classified log events</p>
+          <h3 className={`font-bold text-sm ${textPrimary}`}>Classified Firewall Logs</h3>
+          <p className={`text-xs mt-0.5 ${textSecondary}`}>Latest classified log events</p>
         </div>
 
         {/* Filter Controls */}
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Search Field */}
           <div className="relative w-48">
-            <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-2.5 pointer-events-none" />
+            <Search className={`w-3.5 h-3.5 absolute left-3 top-2.5 pointer-events-none ${textFaint}`} />
             <input
               type="text"
               value={search}
@@ -85,7 +126,7 @@ export default function ThreatTable({ rows = [] }) {
                 setCurrentPage(1);
               }}
               placeholder="Search..."
-              className="w-full bg-gray-50 border border-gray-200 hover:border-gray-300 text-gray-800 text-xs rounded-xl pl-8 pr-3 py-2 focus:outline-none placeholder:text-gray-400"
+              className={`w-full border text-xs rounded-xl pl-8 pr-3 py-2 focus:outline-none ${inputBg}`}
             />
           </div>
 
@@ -97,14 +138,14 @@ export default function ThreatTable({ rows = [] }) {
                 setSeverityFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="appearance-none bg-gray-50 border border-gray-200 hover:border-gray-300 text-gray-700 text-xs font-medium rounded-xl pl-3 pr-8 py-2 focus:outline-none cursor-pointer"
+              className={`appearance-none border text-xs font-medium rounded-xl pl-3 pr-8 py-2 focus:outline-none cursor-pointer ${selectBg}`}
             >
               <option value="All">Severity: All</option>
               <option value="High">Severity: High</option>
               <option value="Medium">Severity: Medium</option>
               <option value="Low">Severity: Low</option>
             </select>
-            <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-3 pointer-events-none" />
+            <ChevronDown className={`w-3.5 h-3.5 absolute right-2.5 top-3 pointer-events-none ${textFaint}`} />
           </div>
         </div>
       </div>
@@ -113,7 +154,7 @@ export default function ThreatTable({ rows = [] }) {
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
-            <tr className="border-y border-gray-100 bg-gray-50/50 text-gray-500 font-semibold">
+            <tr className={`font-semibold ${theadBg}`}>
               <th className="text-left px-6 py-3 font-medium">Source Port</th>
               <th className="text-left px-6 py-3 font-medium">Destination Port</th>
               <th className="text-left px-6 py-3 font-medium">Protocol</th>
@@ -123,30 +164,26 @@ export default function ThreatTable({ rows = [] }) {
               <th className="text-center px-6 py-3 font-medium">Details</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 text-gray-700">
+          <tbody className={`divide-y ${darkMode ? 'divide-[#232F1E]' : 'divide-gray-100'} ${textMuted}`}>
             {paginatedItems.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-10 text-gray-400">
+                <td colSpan={7} className={`text-center py-10 ${textFaint}`}>
                   No log entries match the selected filters.
                 </td>
               </tr>
             ) : (
               paginatedItems.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50/80 transition-colors">
-                  <td className="px-6 py-3.5 font-medium text-gray-800">{item.sourcePort}</td>
-                  <td className="px-6 py-3.5 font-medium text-gray-800">{item.destinationPort}</td>
-                  <td className="px-6 py-3.5 font-medium text-gray-800">{item.protocol}</td>
-                  <td className="px-6 py-3.5 font-semibold text-gray-800">{item.action}</td>
-                  <td className="px-6 py-3.5 font-medium text-gray-800">{item.trafficType}</td>
+                <tr key={item.id} className={`transition-colors ${rowHover}`}>
+                  <td className={`px-6 py-3.5 font-medium ${textBody}`}>{item.sourcePort}</td>
+                  <td className={`px-6 py-3.5 font-medium ${textBody}`}>{item.destinationPort}</td>
+                  <td className={`px-6 py-3.5 font-medium ${textBody}`}>{item.protocol}</td>
+                  <td className={`px-6 py-3.5 font-semibold ${textBody}`}>{item.action}</td>
+                  <td className={`px-6 py-3.5 font-medium ${textBody}`}>{item.trafficType}</td>
                   <td className="px-6 py-3.5 text-center">
                     <span
-                      className={`inline-block px-3 py-1 rounded-full text-[11px] font-medium min-w-[70px] ${
-                        item.severity === 'High'
-                          ? 'bg-red-100/80 text-red-700'
-                          : item.severity === 'Medium'
-                          ? 'bg-amber-100/80 text-amber-800'
-                          : 'bg-emerald-100/80 text-emerald-800'
-                      }`}
+                      className={`inline-block px-3 py-1 rounded-full text-[11px] font-medium min-w-[70px] ${severityPillClass(
+                        item.severity
+                      )}`}
                     >
                       {item.severity}
                     </span>
@@ -154,7 +191,7 @@ export default function ThreatTable({ rows = [] }) {
                   <td className="px-6 py-3.5 text-center">
                     <button
                       onClick={() => setSelectedRow(item)}
-                      className="text-gray-400 hover:text-gray-700 transition-colors cursor-pointer inline-flex items-center justify-center p-1 rounded-md hover:bg-gray-100"
+                      className={`transition-colors cursor-pointer inline-flex items-center justify-center p-1 rounded-md ${eyeBtn}`}
                     >
                       <Eye className="w-4 h-4" />
                     </button>
@@ -168,20 +205,20 @@ export default function ThreatTable({ rows = [] }) {
 
       {/* Pagination Controls */}
       {filteredItems.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-4 border-t border-gray-100">
-          <span className="text-xs text-gray-500">
+        <div className={`flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-4 border-t ${borderLight}`}>
+          <span className={`text-xs ${textSecondary}`}>
             Showing{' '}
-            <span className="font-semibold text-gray-700">
+            <span className={`font-semibold ${textMuted}`}>
               {(safePage - 1) * pageSize + 1}-{Math.min(safePage * pageSize, filteredItems.length)}
             </span>{' '}
-            of <span className="font-semibold text-gray-700">{filteredItems.length}</span> entries
+            of <span className={`font-semibold ${textMuted}`}>{filteredItems.length}</span> entries
           </span>
 
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={safePage === 1}
-              className="flex items-center justify-center w-7 h-7 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+              className={`flex items-center justify-center w-7 h-7 rounded-lg border disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors ${pagerBtn}`}
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
@@ -195,7 +232,7 @@ export default function ThreatTable({ rows = [] }) {
               }, [])
               .map((p, idx) =>
                 p === -1 ? (
-                  <span key={`ellipsis-${idx}`} className="px-1 text-xs text-gray-400">
+                  <span key={`ellipsis-${idx}`} className={`px-1 text-xs ${textFaint}`}>
                     …
                   </span>
                 ) : (
@@ -203,7 +240,7 @@ export default function ThreatTable({ rows = [] }) {
                     key={p}
                     onClick={() => setCurrentPage(p)}
                     className={`w-7 h-7 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                      p === safePage ? 'bg-[#4A5C2E] text-white' : 'text-gray-600 border border-gray-200 hover:bg-gray-50'
+                      p === safePage ? 'bg-[#4A5C2E] text-white' : `border ${pageNumBtn}`
                     }`}
                   >
                     {p}
@@ -214,7 +251,7 @@ export default function ThreatTable({ rows = [] }) {
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={safePage === totalPages}
-              className="flex items-center justify-center w-7 h-7 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+              className={`flex items-center justify-center w-7 h-7 rounded-lg border disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors ${pagerBtn}`}
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
@@ -224,43 +261,48 @@ export default function ThreatTable({ rows = [] }) {
 
       {/* Details Modal */}
       {selectedRow && (
-        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-gray-200 max-w-md w-full p-6 shadow-2xl space-y-4 relative">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h4 className="font-bold text-gray-900 text-sm">Firewall Log Record Details</h4>
-              <button onClick={() => setSelectedRow(null)} className="text-gray-400 hover:text-gray-600 cursor-pointer">
+        <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xs ${darkMode ? 'bg-black/60' : 'bg-gray-900/40'}`}>
+          <div className={`rounded-2xl border max-w-md w-full p-6 shadow-2xl space-y-4 relative ${cardBg} ${cardBorder}`}>
+            <div className={`flex items-center justify-between border-b pb-3 ${borderLight}`}>
+              <h4 className={`font-bold text-sm ${textPrimary}`}>Firewall Log Record Details</h4>
+              <button
+                onClick={() => setSelectedRow(null)}
+                className={`cursor-pointer ${darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="space-y-2 text-xs divide-y divide-gray-100">
+            <div className={`space-y-2 text-xs divide-y ${darkMode ? 'divide-[#232F1E]' : 'divide-gray-100'}`}>
               <div className="flex justify-between py-1.5">
-                <span className="text-gray-500">Source Port</span>
-                <span className="font-bold text-gray-800">{selectedRow.sourcePort}</span>
+                <span className={textSecondary}>Source Port</span>
+                <span className={`font-bold ${textBody}`}>{selectedRow.sourcePort}</span>
               </div>
               <div className="flex justify-between py-1.5">
-                <span className="text-gray-500">Destination Port</span>
-                <span className="font-bold text-gray-800">{selectedRow.destinationPort}</span>
+                <span className={textSecondary}>Destination Port</span>
+                <span className={`font-bold ${textBody}`}>{selectedRow.destinationPort}</span>
               </div>
               <div className="flex justify-between py-1.5">
-                <span className="text-gray-500">Protocol</span>
-                <span className="font-bold text-gray-800">{selectedRow.protocol}</span>
+                <span className={textSecondary}>Protocol</span>
+                <span className={`font-bold ${textBody}`}>{selectedRow.protocol}</span>
               </div>
               <div className="flex justify-between py-1.5">
-                <span className="text-gray-500">Action</span>
-                <span className="font-bold text-gray-800">{selectedRow.action}</span>
+                <span className={textSecondary}>Action</span>
+                <span className={`font-bold ${textBody}`}>{selectedRow.action}</span>
               </div>
               <div className="flex justify-between py-1.5">
-                <span className="text-gray-500">Traffic Type</span>
-                <span className="font-bold text-gray-800">{selectedRow.trafficType}</span>
+                <span className={textSecondary}>Traffic Type</span>
+                <span className={`font-bold ${textBody}`}>{selectedRow.trafficType}</span>
               </div>
               <div className="flex justify-between py-1.5">
-                <span className="text-gray-500">Predicted Severity</span>
-                <span className="font-bold text-gray-900">{selectedRow.severity}</span>
+                <span className={textSecondary}>Predicted Severity</span>
+                <span className={`font-bold ${textPrimary}`}>{selectedRow.severity}</span>
               </div>
             </div>
             <button
               onClick={() => setSelectedRow(null)}
-              className="w-full py-2 bg-gray-900 text-white font-bold rounded-xl text-xs hover:bg-gray-800 cursor-pointer"
+              className={`w-full py-2 font-bold rounded-xl text-xs cursor-pointer ${
+                darkMode ? 'bg-gray-100 text-gray-900 hover:bg-white' : 'bg-gray-900 text-white hover:bg-gray-800'
+              }`}
             >
               Close
             </button>

@@ -12,7 +12,7 @@ import {
   Tooltip,
 } from 'recharts';
 
-export default function SeverityCharts({ results = [] }) {
+export default function SeverityCharts({ results = [], darkMode = false }) {
   let highCount = 213;
   let medCount = 4477;
   let lowCount = 310;
@@ -40,13 +40,31 @@ export default function SeverityCharts({ results = [] }) {
     { name: 'High', value: highCount, color: '#dc2626' },
   ];
 
+  const cardBg = darkMode ? 'bg-[#1A2218]' : 'bg-white';
+  const cardBorder = darkMode ? 'border-[#2A3526]' : 'border-gray-200';
+  const textPrimary = darkMode ? 'text-gray-100' : 'text-gray-900';
+  const textSecondary = darkMode ? 'text-gray-400' : 'text-gray-500';
+  const textMuted = darkMode ? 'text-gray-300' : 'text-gray-700';
+
+  const axisTick = { fill: darkMode ? '#8a9986' : '#64748b', fontSize: 11 };
+  const gridStroke = darkMode ? '#2A3526' : '#f1f5f9';
+  const tooltipStyle = {
+    background: darkMode ? '#1A2218' : '#ffffff',
+    border: darkMode ? '1px solid #2A3526' : '1px solid #e2e8f0',
+    borderRadius: 12,
+    fontSize: 12,
+    color: darkMode ? '#f3f4f6' : '#0f172a',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+  };
+  const barLabelStyle = { fill: darkMode ? '#f3f4f6' : '#0f172a', fontSize: 11, fontWeight: 700 };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
       {/* 1. Classification Distribution Donut Card */}
-      <div className="rounded-2xl bg-white border border-gray-200 p-6 shadow-xs flex flex-col justify-between">
+      <div className={`rounded-2xl ${cardBg} border ${cardBorder} p-6 shadow-xs flex flex-col justify-between`}>
         <div>
-          <h3 className="font-bold text-gray-900 text-sm">Classification Distribution</h3>
-          <p className="text-xs text-gray-500 mb-2">Breakdown of classified logs</p>
+          <h3 className={`font-bold text-sm ${textPrimary}`}>Classification Distribution</h3>
+          <p className={`text-xs mb-2 ${textSecondary}`}>Breakdown of classified logs</p>
 
           <div className="flex items-center justify-between gap-4 py-2">
             {/* Donut Chart with Center Text */}
@@ -73,10 +91,10 @@ export default function SeverityCharts({ results = [] }) {
 
               {/* Center Donut Label Overlay */}
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-                <span className="text-xl font-black text-gray-900 tracking-tight leading-none">
+                <span className={`text-xl font-black tracking-tight leading-none ${textPrimary}`}>
                   {totalLogs.toLocaleString()}
                 </span>
-                <span className="text-xs font-medium text-gray-500 mt-1">Total</span>
+                <span className={`text-xs font-medium mt-1 ${textSecondary}`}>Total</span>
               </div>
             </div>
 
@@ -85,9 +103,9 @@ export default function SeverityCharts({ results = [] }) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#dc2626]" />
-                  <span className="font-medium text-gray-700">High</span>
+                  <span className={`font-medium ${textMuted}`}>High</span>
                 </div>
-                <span className="font-bold text-gray-900">
+                <span className={`font-bold ${textPrimary}`}>
                   {highCount.toLocaleString()} ({highPct}%)
                 </span>
               </div>
@@ -95,9 +113,9 @@ export default function SeverityCharts({ results = [] }) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#e69500]" />
-                  <span className="font-medium text-gray-700">Medium</span>
+                  <span className={`font-medium ${textMuted}`}>Medium</span>
                 </div>
-                <span className="font-bold text-gray-900">
+                <span className={`font-bold ${textPrimary}`}>
                   {medCount.toLocaleString()} ({medPct}%)
                 </span>
               </div>
@@ -105,9 +123,9 @@ export default function SeverityCharts({ results = [] }) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#059669]" />
-                  <span className="font-medium text-gray-700">Low</span>
+                  <span className={`font-medium ${textMuted}`}>Low</span>
                 </div>
-                <span className="font-bold text-gray-900">
+                <span className={`font-bold ${textPrimary}`}>
                   {lowCount.toLocaleString()} ({lowPct}%)
                 </span>
               </div>
@@ -117,37 +135,23 @@ export default function SeverityCharts({ results = [] }) {
       </div>
 
       {/* 2. Severity Counts Bar Chart Card */}
-      <div className="rounded-2xl bg-white border border-gray-200 p-6 shadow-xs flex flex-col justify-between">
+      <div className={`rounded-2xl ${cardBg} border ${cardBorder} p-6 shadow-xs flex flex-col justify-between`}>
         <div>
-          <h3 className="font-bold text-gray-900 text-sm">Severity Counts</h3>
-          <p className="text-xs text-gray-500 mb-2">Count distribution of classified logs by severity level</p>
+          <h3 className={`font-bold text-sm ${textPrimary}`}>Severity Counts</h3>
+          <p className={`text-xs mb-2 ${textSecondary}`}>Count distribution of classified logs by severity level</p>
 
           <div className="h-52 w-full pt-4">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={barData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }} barCategoryGap="15%">
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis
-                  tick={{ fill: '#64748b', fontSize: 11 }}
-                  axisLine={false}
-                  tickLine={false}
-                  allowDecimals={false}
-                />
-                <Tooltip
-                  cursor={{ fill: '#f8fafc' }}
-                  contentStyle={{
-                    background: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 12,
-                    fontSize: 12,
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                  }}
-                />
+                <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
+                <XAxis dataKey="name" tick={axisTick} axisLine={false} tickLine={false} />
+                <YAxis tick={axisTick} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip cursor={{ fill: darkMode ? '#232F1E' : '#f8fafc' }} contentStyle={tooltipStyle} />
                 <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={100}>
                   {barData.map((entry) => (
                     <Cell key={entry.name} fill={entry.color} />
                   ))}
-                  <LabelList dataKey="value" position="top" style={{ fill: '#0f172a', fontSize: 11, fontWeight: 700 }} />
+                  <LabelList dataKey="value" position="top" style={barLabelStyle} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>

@@ -1,7 +1,7 @@
 import { Download } from 'lucide-react';
 import Papa from 'papaparse';
 
-export default function ExportButton({ rows, predictions }) {
+export default function ExportButton({ rows, predictions, darkMode = false }) {
   const handleExportCsv = () => {
     const enrichedData = rows.map((row, i) => ({
       ...row,
@@ -18,10 +18,14 @@ export default function ExportButton({ rows, predictions }) {
   };
 
   return (
-    <div className="rounded-2xl bg-white border border-gray-200 p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div
+      className={`rounded-2xl border p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
+        darkMode ? 'bg-[#1A2218] border-[#2A3526]' : 'bg-white border-gray-200'
+      }`}
+    >
       <div>
-        <h3 className="text-sm font-bold text-gray-900">Export Report as CSV</h3>
-        <p className="text-xs text-gray-500 mt-0.5">
+        <h3 className={`text-sm font-bold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Export Report as CSV</h3>
+        <p className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           Exported file includes original log data with the predicted Severity Level appended.
         </p>
       </div>

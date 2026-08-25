@@ -170,7 +170,10 @@ function App() {
             />
           )}
 
-          {activeTab === 'log-classification' && <BatchAnalysisPage />}
+          {/* Always mounted (just hidden when inactive) so upload/results state survives tab switches */}
+          <div className={activeTab === 'log-classification' ? '' : 'hidden'}>
+            <BatchAnalysisPage darkMode={darkMode} />
+          </div>
 
           {activeTab === 'reports' && (
             <Placeholder
