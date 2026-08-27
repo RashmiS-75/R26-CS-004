@@ -1,7 +1,11 @@
+
+// Icons and required column list
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { REQUIRED_COLUMNS } from '../constants/modelConstants';
 
 export default function ColumnValidator({ presentColumns, darkMode = false }) {
+  
+  // Find columns that are missing
   const missing = REQUIRED_COLUMNS.filter((c) => !presentColumns.includes(c));
   const isValid = missing.length === 0;
 

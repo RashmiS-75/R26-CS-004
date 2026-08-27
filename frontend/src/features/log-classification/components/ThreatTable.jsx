@@ -10,14 +10,17 @@ const sampleData = [
   { sourcePort: '23456', destinationPort: '110', protocol: 'UDP', action: 'ALLOW', trafficType: 'POP3', severity: 'Medium' },
 ];
 
+// Displays classified firewall logs in a table
 export default function ThreatTable({ rows = [], darkMode = false }) {
+  
+  // Store search, filter, selected row and page number
   const [search, setSearch] = useState('');
   const [severityFilter, setSeverityFilter] = useState('All');
   const [selectedRow, setSelectedRow] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 10; // Show only 10 records per page
 
-  // Normalize row items
+  // Convert raw prediction data into table-friendly rows
   const items = useMemo(() => {
     if (rows.length > 0) {
       return rows.map((r) => {
@@ -37,6 +40,7 @@ export default function ThreatTable({ rows = [], darkMode = false }) {
     return sampleData.map((item, idx) => ({ ...item, id: idx, raw: null }));
   }, [rows]);
 
+  // Filter logs according to search text and severity
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
       if (severityFilter !== 'All' && item.severity !== severityFilter) return false;

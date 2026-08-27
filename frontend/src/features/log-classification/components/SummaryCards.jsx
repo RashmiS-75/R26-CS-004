@@ -1,10 +1,15 @@
+
+// Icons for the summary cards
 import { FileText, AlertTriangle, Shield, ShieldCheck } from 'lucide-react';
 
 export default function SummaryCards({ results, total }) {
+  
+  // Count logs in each severity level
   const high = results.filter((r) => r.severity === 'High').length;
   const medium = results.filter((r) => r.severity === 'Medium').length;
   const low = results.filter((r) => r.severity === 'Low').length;
 
+  // Calculate the percentage of each severity
   const highPct = total > 0 ? ((high / total) * 100).toFixed(1) : '0.0';
   const medPct = total > 0 ? ((medium / total) * 100).toFixed(1) : '0.0';
   const lowPct = total > 0 ? ((low / total) * 100).toFixed(1) : '0.0';

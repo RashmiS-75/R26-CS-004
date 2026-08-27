@@ -5,8 +5,13 @@ import { fetchSession } from '../utils/sessionsApi';
 import HistoryTable from '../components/HistoryTable';
 import ResultsDashboard from '../components/ResultsDashboard';
 
+// Page for viewing previous classification uploads
 export default function UploadHistoryPage({ darkMode = false, onBackToUpload }) {
+  
+  // Get saved sessions and history functions
   const { sessions, loading, error, reload, removeSession } = useUploadHistory();
+  
+  // Stores the history record selected by the user
   const [selected, setSelected] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
@@ -18,6 +23,7 @@ export default function UploadHistoryPage({ darkMode = false, onBackToUpload }) 
   const textSecondary = darkMode ? 'text-gray-400' : 'text-gray-500';
   const hoverBg = darkMode ? 'hover:bg-[#212B1B]' : 'hover:bg-gray-50';
 
+  // Load details of a selected upload
   const handleView = useCallback(async (id) => {
     setDetailLoading(true);
     try {

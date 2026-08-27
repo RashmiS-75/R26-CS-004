@@ -14,15 +14,18 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import sessions_collection
 
+# Load the trained model and supporting files
 ART = Path("artifacts")
 model       = joblib.load(ART / "model.joblib")
 severity_le = joblib.load(ART / "severity_label_encoder.joblib")
 schema      = json.loads((ART / "feature_schema.json").read_text())
 
+# Get the features expected by the trained model
 NUMERIC_FEATURES     = schema["numeric_features"]
 CATEGORICAL_FEATURES = schema["categorical_features"]
 MODEL_COLUMNS        = NUMERIC_FEATURES + CATEGORICAL_FEATURES
 
+# Defines and validates the input firewall-log structure
 class FirewallLogEntry(BaseModel):
     # --- Numeric fields ---
     source_port:      int   = Field(..., alias="Source Port",      ge=0, le=65535)
@@ -92,6 +95,7 @@ class SessionSummary(BaseModel):
 class SessionDetail(SessionSummary):
     predictions: list[dict[str, Any]]
 
+#Converts sparse fields to 0/1
 def _is_present(value) -> int:
     if value is None:
         return 0
@@ -101,7 +105,7 @@ def _is_present(value) -> int:
         return 0
     return 1
 
-
+#Converts raw input into model features
 def _preprocess(entry: FirewallLogEntry) -> pd.DataFrame:
     row = {
         # Numeric
@@ -159,7 +163,7 @@ def predict(entry: FirewallLogEntry):
         severity=severity_le.inverse_transform([pred])[0]
     )
 
-
+#Main batch prediction API
 @app.post("/predict_batch", response_model=list[PredictionResponse])
 def predict_batch(entries: list[FirewallLogEntry]):
     """Predict for many entries at once."""

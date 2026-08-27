@@ -1,3 +1,5 @@
+
+// Download icon and CSV library
 import { Download } from 'lucide-react';
 import Papa from 'papaparse';
 
@@ -8,6 +10,7 @@ export default function ExportButton({ rows, predictions, darkMode = false }) {
       'Predicted Severity': predictions[i]?.severity ?? '',
     }));
     const csv = Papa.unparse(enrichedData);
+    // Create a temporary CSV file for download
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { Eye, Trash2 } from 'lucide-react';
 
+// Displays previous upload sessions
 export default function HistoryTable({ sessions, darkMode = false, onView, onDelete }) {
+  
+  // Store delete confirmation and deleting status
   const [confirmId, setConfirmId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 

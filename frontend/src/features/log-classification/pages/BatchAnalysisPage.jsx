@@ -1,3 +1,4 @@
+
 import { useCallback, useRef, useState } from 'react';
 import { Upload, FileText, Download, X, Table, AlertTriangle, FileSpreadsheet, CheckCircle2, History } from 'lucide-react';
 import { REQUIRED_COLUMNS } from '../constants/modelConstants';
@@ -12,13 +13,19 @@ function fileIcon(name) {
   return <FileSpreadsheet className="w-4 h-4 text-[#4A5C2E]" />;
 }
 
+// Main page for batch log classification
 export default function BatchAnalysisPage({ darkMode = false }) {
+  
+  // Get file status, predictions and processing functions
   const { stage, fileName, presentColumns, validationError, apiError, rawRows, predictions, processFile, reset } =
     useCSVUpload();
+
+  // Store temporary UI states
   const [dragOver, setDragOver] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const inputRef = useRef(null);
 
+// Send selected file for processing
   const handleFile = useCallback(
     (e) => {
       const file = e.target.files?.[0];
@@ -27,7 +34,8 @@ export default function BatchAnalysisPage({ darkMode = false }) {
     },
     [processFile]
   );
-
+  
+// Send dropped file for processing
   const handleDrop = useCallback(
     (e) => {
       e.preventDefault();

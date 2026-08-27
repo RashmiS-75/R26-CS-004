@@ -1,3 +1,4 @@
+// Chart components
 import {
   PieChart,
   Pie,
@@ -13,6 +14,8 @@ import {
 } from 'recharts';
 
 export default function SeverityCharts({ results = [], darkMode = false }) {
+  
+  // Count each severity level
   let highCount = 213;
   let medCount = 4477;
   let lowCount = 310;
@@ -23,17 +26,20 @@ export default function SeverityCharts({ results = [], darkMode = false }) {
     lowCount = results.filter((r) => r.severity === 'Low').length;
   }
 
+  // Calculate severity percentages
   const totalLogs = results.length > 0 ? results.length : 5000;
   const highPct = ((highCount / totalLogs) * 100).toFixed(1);
   const medPct = ((medCount / totalLogs) * 100).toFixed(1);
   const lowPct = ((lowCount / totalLogs) * 100).toFixed(1);
 
+  // Data used by the donut chart
   const pieData = [
     { name: 'High', value: highCount, color: '#dc2626', pct: `${highPct}%` },
     { name: 'Medium', value: medCount, color: '#e69500', pct: `${medPct}%` },
     { name: 'Low', value: lowCount, color: '#059669', pct: `${lowPct}%` },
   ];
 
+  // Data used by the bar chart
   const barData = [
     { name: 'Low', value: lowCount, color: '#059669' },
     { name: 'Medium', value: medCount, color: '#e69500' },

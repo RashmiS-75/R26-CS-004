@@ -1,3 +1,5 @@
+
+// Features required for ML prediction
 export const REQUIRED_COLUMNS = [
   'Source Port',
   'Destination Port',
