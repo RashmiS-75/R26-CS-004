@@ -1,28 +1,56 @@
 # src/risk_scorer.py
-
 import pandas as pd
 import numpy as np
-from src.impact import calculate_impact_from_model, get_risk_level
+from src.fuzzy_impact import calculate_fuzzy_impact, get_risk_level
 
-def calculate_risk_score(model, X, feature_importances=None):
+
+MODEL_FEATURES = [
+    "proto", "action", "service", "duration",
+    "sentbyte", "rcvdbyte", "sentpkt", "rcvdpkt", "trandisp",
+    "bytes_total", "pkt_total", "pkt_ratio"
+]
+
+
+def calculate_risk_score(model, X, feature_importances=None, use_weighted_impact=True):
     """
-    Main function of the Risk Scoring Engine
-    Risk Score = Probability × Impact × 100
+    Risk Scoring Engine core
+
+    predicted_label = ML class prediction (0/1)
+    likelihood      = ML probability of malicious class
+    impact          = Fuzzy non-ML severity score
+    risk_score      = likelihood * impact * 100
     """
-    # Probability of being risky (class 1)
-    probability = model.predict_proba(X)[:, 1]
+    if isinstance(X, pd.DataFrame):
+        X_df = X.copy()
+    else:
+        X_df = pd.DataFrame(X)
 
-    # Impact using Permutation Importance
-    impact = calculate_impact_from_model(model, X.values, feature_importances)
+    # Model sees only trained features
+    model_cols = [c for c in MODEL_FEATURES if c in X_df.columns]
+    if len(model_cols) < 5:
+        raise ValueError(f"Not enough model features. Found: {model_cols}")
 
-    # Final Risk Score
-    risk_score = probability * impact * 100
+    X_model = X_df[model_cols].copy()
+    X_model = X_model.fillna(X_model.median(numeric_only=True))
 
-    results = pd.DataFrame({
-        "probability": np.round(probability, 4),
+    # 1) Predicted class for comparison with labels
+    predicted_label = model.predict(X_model)
+
+    # 2) Likelihood from ML model
+    likelihood = model.predict_proba(X_model)[:, 1]
+
+    # 3) Impact from advanced fuzzy non-ML engine
+    #    Can use extra columns like apprisk/appcat/dstreputation if present
+    impact = calculate_fuzzy_impact(X_df)
+
+    # 4) Core risk formula
+    risk_score = likelihood * impact * 100
+
+    return pd.DataFrame({
+        "predicted_label": predicted_label.astype(int),
+        "likelihood": np.round(likelihood, 4),
+        "probability": np.round(likelihood, 4),  # backward compatible
         "impact": np.round(impact, 4),
         "risk_score": np.round(risk_score, 2),
         "risk_level": [get_risk_level(s) for s in risk_score]
     })
-
-    return results

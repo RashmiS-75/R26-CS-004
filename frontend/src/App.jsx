@@ -1,10 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import {
   LayoutDashboard, Shield, FileText, AlertTriangle,
-  BarChart3, Settings, Upload, Bell, Activity, TrendingUp, Moon, Sun, Download
+  BarChart3, Settings, Upload, Bell, Moon, Sun
 } from 'lucide-react'
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
+import {
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
+  ScatterChart, Scatter, LineChart, Line
+} from 'recharts'
 import audixaLogo from './assets/g.png'
+
+const RANGE_COLORS = ['#16A34A', '#84CC16', '#EAB308', '#EA580C', '#DC2626']
 
 function App() {
   const [activeTab, setActiveTab] = useState('risk-scoring')
@@ -12,360 +18,344 @@ function App() {
   const [results, setResults] = useState(null)
   const [detailed, setDetailed] = useState([])
   const [loading, setLoading] = useState(false)
+  const [scoreBuckets, setScoreBuckets] = useState([])
   const [riskDistribution, setRiskDistribution] = useState([])
+  const [priorityMix, setPriorityMix] = useState([])
+  const [heat, setHeat] = useState([])
+  const [scatterData, setScatterData] = useState([])
+  const [lineData, setLineData] = useState([])
   const [darkMode, setDarkMode] = useState(false)
 
-  // Load dark mode preference
   useEffect(() => {
-    const saved = localStorage.getItem('audixa-dark-mode')
-    if (saved === 'true') setDarkMode(true)
+    if (localStorage.getItem('audixa-dark-mode') === 'true') setDarkMode(true)
   }, [])
-
-  // Save preference
   useEffect(() => {
     localStorage.setItem('audixa-dark-mode', darkMode)
   }, [darkMode])
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0])
-  }
-
   const handleAnalyze = async () => {
-    if (!file) return alert('Please upload a CSV file first')
+    if (!file) return alert('Please upload a firewall log CSV first')
     setLoading(true)
-
     try {
       const formData = new FormData()
       formData.append('file', file)
+      const res = await fetch('http://127.0.0.1:8000/analyze', { method: 'POST', body: formData })
+      if (!res.ok) throw new Error((await res.json()).detail || 'Analysis failed')
+      const data = await res.json()
+      const summary = data.summary || {}
+      const rows = (data.detailed || []).map((r) => ({
+        ...r,
+        predicted_label: Number(r.predicted_label ?? -1),
+        likelihood: Number(r.likelihood ?? r.probability ?? 0),
+        probability: Number(r.probability ?? r.likelihood ?? 0),
+        impact: Number(r.impact ?? 0),
+        risk_score: Number(r.risk_score ?? 0),
+        risk_level: r.risk_level || 'Low',
+      }))
 
-      const response = await fetch('http://127.0.0.1:8000/analyze', {
-        method: 'POST',
-        body: formData,
+      const scores = rows.map((r) => r.risk_score)
+      const avg = mean(scores)
+      const maxScore = scores.length ? Math.max(...scores) : 0
+      const minScore = scores.length ? Math.min(...scores) : 0
+      const median = quantile(scores, 0.5)
+      const p90 = quantile(scores, 0.9)
+      const total = summary.total ?? rows.length
+      const critical = summary.critical || 0
+      const high = summary.high || 0
+      const medium = summary.medium || 0
+      const low = summary.low || 0
+      const attention = critical + high
+      const suspicious = rows.filter((r) => r.predicted_label === 1).length
+
+      setResults({
+        total,
+        avgScore: n1(summary.avg_score ?? avg),
+        maxScore: n1(summary.max_score ?? maxScore),
+        minScore: n1(minScore),
+        medianScore: n1(median),
+        p90: n1(p90),
+        critical, high, medium, low, attention, suspicious,
+        coverageHigh: pct(attention, total),
       })
+      setDetailed(rows)
 
-      if (!response.ok) {
-        const err = await response.json()
-        throw new Error(err.detail || 'Analysis failed')
-      }
+      const buckets = [
+        { range: '0–20', min: 0, max: 20 },
+        { range: '20–40', min: 20, max: 40 },
+        { range: '40–60', min: 40, max: 60 },
+        { range: '60–80', min: 60, max: 80 },
+        { range: '80–100', min: 80, max: 101 },
+      ]
 
-      const data = await response.json()
-      const summary = data.summary
-      setResults(summary)
-      setDetailed(data.detailed || [])
+      setScoreBuckets(buckets.map((b, i) => ({
+        range: b.range,
+        count: rows.filter((r) => r.risk_score >= b.min && r.risk_score < b.max).length,
+        color: RANGE_COLORS[i],
+      })))
 
-      const total = summary.total || 1
+      setPriorityMix(buckets.map((b) => {
+        const inRange = rows.filter((r) => r.risk_score >= b.min && r.risk_score < b.max)
+        return {
+          range: b.range,
+          Low: inRange.filter((r) => r.risk_level === 'Low').length,
+          Medium: inRange.filter((r) => r.risk_level === 'Medium').length,
+          High: inRange.filter((r) => r.risk_level === 'High').length,
+          Critical: inRange.filter((r) => r.risk_level === 'Critical').length,
+        }
+      }))
+
       setRiskDistribution([
-        { name: 'Critical', value: Math.round((summary.critical / total) * 100), count: summary.critical, color: '#DC2626' },
-        { name: 'High', value: Math.round((summary.high / total) * 100), count: summary.high, color: '#EA580C' },
-        { name: 'Medium', value: Math.round((summary.medium / total) * 100), count: summary.medium, color: '#CA8A04' },
-        { name: 'Low', value: Math.round((summary.low / total) * 100), count: summary.low, color: '#16A34A' },
+        { name: 'Critical', value: critical, color: '#DC2626' },
+        { name: 'High', value: high, color: '#EA580C' },
+        { name: 'Medium', value: medium, color: '#CA8A04' },
+        { name: 'Low', value: low, color: '#16A34A' },
       ])
-    } catch (error) {
-      alert('Error: ' + error.message)
+
+      setHeat(buckets.map((b) => {
+        const inRange = rows.filter((r) => r.risk_score >= b.min && r.risk_score < b.max)
+        return {
+          range: b.range,
+          Suspicious: inRange.filter((r) => r.predicted_label === 1).length,
+          Normal: inRange.filter((r) => r.predicted_label === 0).length,
+        }
+      }))
+
+      const sample = rows.filter((_, i) => i % 12 === 0).slice(0, 400)
+      setScatterData(sample.map((r) => ({
+        x: Number((r.probability ?? r.likelihood ?? 0).toFixed(3)),
+        y: Number(r.risk_score.toFixed(2)),
+      })))
+
+      const sorted = [...rows].sort((a, b) => a.risk_score - b.risk_score)
+      const step = Math.max(1, Math.floor(sorted.length / 50))
+      let running = 0
+      const line = []
+      sorted.forEach((r, idx) => {
+        running += r.risk_score
+        if (idx % step === 0 || idx === sorted.length - 1) {
+          line.push({
+            point: line.length + 1,
+            risk: Number(r.risk_score.toFixed(2)),
+            avg: Number((running / (idx + 1)).toFixed(2)),
+          })
+        }
+      })
+      setLineData(line)
+    } catch {
+      alert('Unable to analyse this file. Please upload a valid firewall log CSV.')
     } finally {
       setLoading(false)
     }
   }
 
-  // ========== EXPORT FULL AUDIT LOG + RISK SCORES ==========
   const handleExport = () => {
-    if (!detailed || detailed.length === 0) {
-      alert('No results to export. Please analyze a file first.')
-      return
-    }
-
-    // Use ALL columns from the detailed results (original log fields + risk scores)
-    const headers = Object.keys(detailed[0])
-
-    const csvRows = [
+    if (!detailed.length) return alert('No results to export')
+    const engine = ['predicted_label', 'probability', 'likelihood', 'impact', 'risk_score', 'risk_level']
+    const original = Object.keys(detailed[0]).filter((k) => !engine.includes(k))
+    const headers = [...original, 'predicted_label', 'probability', 'impact', 'risk_score', 'risk_level']
+    const csv = [
       headers.join(','),
-      ...detailed.map(row =>
-        headers.map(h => {
-          const val = row[h]
-          if (val === null || val === undefined) return ''
-          // Escape quotes and wrap in quotes for CSV safety
-          const str = String(val).replace(/"/g, '""')
-          return `"${str}"`
-        }).join(',')
-      )
-    ]
-
-    const csvContent = csvRows.join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      ...detailed.map((row) =>
+        headers.map((h) => `"${String((h === 'probability' ? (row.probability ?? row.likelihood) : row[h]) ?? '').replace(/"/g, '""')}"`).join(',')
+      ),
+    ].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', 'audixa_full_audit_log_with_risk_scores.csv')
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'audixa_firewall_risk_report.csv'
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
-  const barData = riskDistribution.map(item => ({
-    name: item.name,
-    count: item.count
-  }))
-
-  const highRiskRows = detailed
-    .filter(row => row.risk_level === 'Critical' || row.risk_level === 'High')
-    .slice(0, 15)
-
-  // Theme classes
-  const bgMain = darkMode ? 'bg-[#0F1410]' : 'bg-[#F4F5F7]'
-  const bgCard = darkMode ? 'bg-[#1A2218]' : 'bg-white'
-  const borderColor = darkMode ? 'border-[#2A3526]' : 'border-gray-200'
-  const textPrimary = darkMode ? 'text-gray-100' : 'text-gray-900'
-  const textSecondary = darkMode ? 'text-gray-400' : 'text-gray-500'
-  const headerBg = darkMode ? 'bg-[#1A2218]' : 'bg-white'
+  const bgMain = darkMode ? 'bg-[#07110C]' : 'bg-[#EEF1EC]'
+  const bgCard = darkMode ? 'bg-[#122017]' : 'bg-white'
+  const border = darkMode ? 'border-[#1F2E24]' : 'border-[#D7DDD6]'
+  const text = darkMode ? 'text-gray-100' : 'text-gray-900'
+  const muted = darkMode ? 'text-gray-400' : 'text-gray-500'
+  const gauge = results ? Math.min(100, Number(results.avgScore)) : 0
 
   return (
-    <div className={`flex h-screen ${bgMain} ${textPrimary} font-sans transition-colors duration-300`}>
-      
-      {/* ================= SIDEBAR ================= */}
-      <aside className="w-64 bg-[#1F2A1A] text-white flex flex-col shadow-xl">
-        <div className="bg-white px-4 py-4 flex items-center justify-center border-b border-gray-200">
-          <img
-            src={audixaLogo}
-            alt="Audixa Logo"
-            className="h-12 w-auto object-contain"
-          />
+    <div className={`flex h-screen ${bgMain} ${text} font-sans`}>
+      <aside className="w-56 bg-[#101A14] text-white flex flex-col">
+        <div className="bg-white px-3 py-3 flex justify-center">
+          <img src={audixaLogo} alt="Audixa" className="h-10 object-contain" />
         </div>
-
-        <nav className="flex-1 px-3 py-5 space-y-1">
-          <NavItem icon={<LayoutDashboard size={17} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-          <NavItem icon={<Shield size={17} />} label="Risk Scoring" active={activeTab === 'risk-scoring'} onClick={() => setActiveTab('risk-scoring')} />
-          <NavItem icon={<FileText size={17} />} label="Log Classification" active={activeTab === 'log-classification'} onClick={() => setActiveTab('log-classification')} />
-          <NavItem icon={<BarChart3 size={17} />} label="Reports" active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
-          <NavItem icon={<AlertTriangle size={17} />} label="Alerts" active={activeTab === 'alerts'} onClick={() => setActiveTab('alerts')} />
-          <NavItem icon={<Settings size={17} />} label="Settings" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
+        <nav className="flex-1 p-3 space-y-1">
+          <NavItem icon={<LayoutDashboard size={16} />} label="Overview" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
+          <NavItem icon={<Shield size={16} />} label="Risk Scoring" active={activeTab === 'risk-scoring'} onClick={() => setActiveTab('risk-scoring')} />
+          <NavItem icon={<FileText size={16} />} label="Log Review" onClick={() => setActiveTab('logs')} />
+          <NavItem icon={<BarChart3 size={16} />} label="Reports" onClick={() => setActiveTab('reports')} />
+          <NavItem icon={<AlertTriangle size={16} />} label="Alerts" onClick={() => setActiveTab('alerts')} />
+          <NavItem icon={<Settings size={16} />} label="Settings" onClick={() => setActiveTab('settings')} />
         </nav>
-
-        <div className="px-5 py-4 text-[11px] text-gray-500 border-t border-[#2E3B28]">
-          Component 2 • R26-CS-004
-        </div>
       </aside>
 
-      {/* ================= MAIN ================= */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        
-        {/* Header */}
-        <header className={`h-16 ${headerBg} border-b ${borderColor} flex items-center justify-between px-8 shadow-sm transition-colors`}>
+      <div className="flex-1 overflow-hidden flex flex-col">
+        <header className={`h-16 ${bgCard} border-b ${border} px-5 flex items-center justify-between`}>
           <div>
-            <h2 className={`text-lg font-semibold ${textPrimary}`}>Risk Scoring Engine</h2>
-            <p className={`text-xs ${textSecondary}`}>Intelligent Firewall Log Risk Analysis • Audixa</p>
+            <h1 className="text-sm font-semibold tracking-wide">FIREWALL RISK ENGINE</h1>
+            <p className={`text-[11px] ${muted}`}>Operational risk scoring and audit exposure view</p>
           </div>
-          <div className="flex items-center gap-4">
-            <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${darkMode ? 'bg-[#2A3526] text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
-              Risk = Probability × Impact × 100
-            </span>
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className={`p-2 rounded-lg transition ${darkMode ? 'bg-[#2A3526] text-yellow-400 hover:bg-[#354230]' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-              title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            >
-              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+          <div className="flex items-center gap-2">
+            <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-md ${darkMode ? 'bg-[#1F2E24]' : 'bg-gray-100'}`}>
+              {darkMode ? <Sun size={15} /> : <Moon size={15} />}
             </button>
-            <Bell size={18} className={textSecondary} />
-            <div className="w-8 h-8 rounded-full bg-[#4A5C2E] flex items-center justify-center text-white text-sm font-semibold">
-              A
-            </div>
+            <Bell size={15} className={muted} />
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-7">
-          {activeTab === 'risk-scoring' && (
+        <main className="flex-1 overflow-y-auto p-5">
+          {activeTab !== 'risk-scoring' ? (
+            <p className={muted}>Reserved workspace section</p>
+          ) : (
             <>
-              {/* Upload Section */}
-              <div className={`${bgCard} rounded-xl border ${borderColor} shadow-sm p-5 mb-6 transition-colors`}>
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <div>
-                    <h3 className={`font-semibold ${textPrimary} flex items-center gap-2`}>
-                      <Upload size={18} className="text-[#4A5C2E]" />
-                      Upload Firewall Log
-                    </h3>
-                    <p className={`text-sm ${textSecondary} mt-1`}>
-                      Upload a processed CSV to generate risk scores using the trained model
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="file"
-                      accept=".csv"
-                      onChange={handleFileChange}
-                      className={`text-sm ${textSecondary} file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#E8EDE0] file:text-[#1F2A1A] hover:file:bg-[#D5DEC8]`}
-                    />
-                    <button
-                      onClick={handleAnalyze}
-                      disabled={loading}
-                      className="px-5 py-2.5 bg-[#4A5C2E] hover:bg-[#3A4A24] text-white text-sm font-medium rounded-lg transition disabled:opacity-50 shadow-sm"
-                    >
-                      {loading ? 'Analyzing...' : 'Analyze Risk'}
-                    </button>
-                  </div>
+              <div className={`${bgCard} border ${border} rounded-lg p-3 mb-4 flex flex-wrap items-center justify-between gap-3`}>
+                <div className="flex items-center gap-2 text-sm font-medium"><Upload size={15} /> Log Intake</div>
+                <div className="flex items-center gap-2">
+                  <input type="file" accept=".csv" onChange={(e) => setFile(e.target.files[0])} className={`text-xs ${muted}`} />
+                  <button onClick={handleAnalyze} disabled={loading} className="px-3 py-2 text-xs rounded-md bg-[#3E522C] text-white">
+                    {loading ? 'Processing...' : 'Run Risk Assessment'}
+                  </button>
+                  <button onClick={handleExport} className="px-3 py-2 text-xs rounded-md border border-[#3E522C] text-[#3E522C]">
+                    Export CSV
+                  </button>
                 </div>
               </div>
 
-              {results ? (
+              {!results ? (
+                <p className={`text-sm ${muted}`}>Upload a firewall log CSV to populate the control center.</p>
+              ) : (
                 <>
-                  {/* Metric Cards */}
-                  <div className="grid grid-cols-4 gap-5 mb-6">
-                    <MetricCard title="Total Logs" value={results.total.toLocaleString()} subtitle="Processed records" color="bg-[#4A5C2E]" />
-                    <MetricCard title="Critical Risk" value={results.critical} subtitle={`${((results.critical / results.total) * 100).toFixed(1)}% of total`} color="bg-[#DC2626]" />
-                    <MetricCard title="High Risk" value={results.high} subtitle={`${((results.high / results.total) * 100).toFixed(1)}% of total`} color="bg-[#EA580C]" />
-                    <MetricCard title="Low + Medium" value={(results.low + results.medium).toLocaleString()} subtitle="Acceptable risk range" color="bg-[#15803D]" />
+                  <div className="grid grid-cols-2 xl:grid-cols-6 gap-3 mb-4">
+                    <Tile label="Risk Index" value={results.avgScore} color="bg-[#3E522C]" />
+                    <Tile label="Peak Risk" value={results.maxScore} color="bg-[#7F1D1D]" />
+                    <Tile label="90th Percentile" value={results.p90} color="bg-[#9A3412]" />
+                    <Tile label="Median" value={results.medianScore} color="bg-[#1F3B2C]" />
+                    <Tile label="Attention Load" value={`${results.coverageHigh}%`} color="bg-[#7C2D12]" />
+                    <Tile label="Logs Assessed" value={Number(results.total).toLocaleString()} color="bg-[#374151]" />
                   </div>
 
-                  {/* Charts Row */}
-                  <div className="grid grid-cols-2 gap-6 mb-6">
-                    <div className={`${bgCard} rounded-xl border ${borderColor} shadow-sm p-6 transition-colors`}>
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className={`font-semibold ${textPrimary}`}>Risk Level Distribution</h3>
-                        <Activity size={16} className={textSecondary} />
-                      </div>
-                      <p className={`text-sm ${textSecondary} mb-4`}>Percentage breakdown of risk categories</p>
-                      <ResponsiveContainer width="100%" height={240}>
-                        <PieChart>
-                          <Pie data={riskDistribution} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={3} dataKey="value">
-                            {riskDistribution.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip formatter={(value) => `${value}%`} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div className="flex justify-center gap-5 mt-2 flex-wrap">
-                        {riskDistribution.map((item) => (
-                          <div key={item.name} className="flex items-center gap-1.5 text-sm">
-                            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                            <span className={textSecondary}>{item.name}</span>
-                            <span className={`font-semibold ${textPrimary}`}>{item.value}%</span>
-                          </div>
+                  <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 mb-4">
+                    <div className={`${bgCard} border ${border} rounded-lg p-4`}>
+                      <p className="text-xs font-semibold mb-2">RISK INDEX GAUGE</p>
+                      <div className="h-28 flex items-end gap-1">
+                        {[0, 20, 40, 60, 80, 100].map((x) => (
+                          <div key={x} className="flex-1 rounded-t" style={{
+                            height: `${20 + x * 0.7}%`,
+                            background: gauge >= x ? (x >= 80 ? '#DC2626' : x >= 60 ? '#EA580C' : x >= 40 ? '#EAB308' : '#16A34A') : (darkMode ? '#1F2E24' : '#E5E7EB')
+                          }} />
                         ))}
                       </div>
+                      <p className="text-3xl font-bold mt-3">{results.avgScore}</p>
+                      <p className={`text-xs ${muted}`}>Current batch risk index</p>
                     </div>
 
-                    <div className={`${bgCard} rounded-xl border ${borderColor} shadow-sm p-6 transition-colors`}>
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className={`font-semibold ${textPrimary}`}>Risk Count by Level</h3>
-                        <TrendingUp size={16} className={textSecondary} />
-                      </div>
-                      <p className={`text-sm ${textSecondary} mb-4`}>Number of logs in each risk category</p>
-                      <ResponsiveContainer width="100%" height={240}>
-                        <BarChart data={barData}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={darkMode ? '#2A3526' : '#E5E7EB'} />
-                          <XAxis dataKey="name" tick={{ fontSize: 12, fill: darkMode ? '#9CA3AF' : '#6B7280' }} />
-                          <YAxis tick={{ fontSize: 12, fill: darkMode ? '#9CA3AF' : '#6B7280' }} />
-                          <Tooltip contentStyle={{ backgroundColor: darkMode ? '#1A2218' : '#fff', borderColor: darkMode ? '#2A3526' : '#E5E7EB' }} />
-                          <Bar dataKey="count" radius={[6, 6, 0, 0]}>
-                            {barData.map((entry, index) => (
-                              <Cell key={`bar-${index}`} fill={riskDistribution[index]?.color || '#4A5C2E'} />
-                            ))}
+                    <div className={`xl:col-span-2 ${bgCard} border ${border} rounded-lg p-4`}>
+                      <p className="text-xs font-semibold mb-2">RISK SCORE DISTRIBUTION</p>
+                      <ResponsiveContainer width="100%" height={180}>
+                        <BarChart data={scoreBuckets}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="range" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} />
+                          <Tooltip />
+                          <Bar dataKey="count">
+                            {scoreBuckets.map((e, i) => <Cell key={i} fill={e.color || RANGE_COLORS[i]} />)}
                           </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <div className={`${bgCard} border ${border} rounded-lg p-4`}>
+                      <p className="text-xs font-semibold mb-2">PRIORITY REGISTER</p>
+                      <ResponsiveContainer width="100%" height={120}>
+                        <PieChart>
+                          <Pie data={riskDistribution} dataKey="value" innerRadius={34} outerRadius={52}>
+                            {riskDistribution.map((e, i) => <Cell key={i} fill={e.color} />)}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      {riskDistribution.map((x) => (
+                        <div key={x.name} className="flex justify-between text-xs py-0.5"><span>{x.name}</span><b>{x.value}</b></div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
+                    <div className={`${bgCard} border ${border} rounded-lg p-4`}>
+                      <p className="text-xs font-semibold mb-2">SCORE x PRIORITY HEATMAP</p>
+                      <ResponsiveContainer width="100%" height={210}>
+                        <BarChart data={priorityMix}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="range" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} />
+                          <Tooltip />
+                          <Legend />
+                          <Bar dataKey="Low" stackId="a" fill="#16A34A" />
+                          <Bar dataKey="Medium" stackId="a" fill="#CA8A04" />
+                          <Bar dataKey="High" stackId="a" fill="#EA580C" />
+                          <Bar dataKey="Critical" stackId="a" fill="#DC2626" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className={`${bgCard} border ${border} rounded-lg p-4`}>
+                      <p className="text-xs font-semibold mb-2">SUSPICIOUS EXPOSURE MAP</p>
+                      <ResponsiveContainer width="100%" height={210}>
+                        <BarChart data={heat}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="range" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} />
+                          <Tooltip />
+                          <Legend />
+                          <Bar dataKey="Suspicious" stackId="a" fill="#7F1D1D" />
+                          <Bar dataKey="Normal" stackId="a" fill="#3E522C" />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
 
-                  {/* Insights + Table */}
-                  <div className="grid grid-cols-3 gap-6 mb-6">
-                    <div className={`${bgCard} rounded-xl border ${borderColor} shadow-sm p-6 transition-colors`}>
-                      <h3 className={`font-semibold ${textPrimary} mb-1`}>Analysis Insights</h3>
-                      <p className={`text-sm ${textSecondary} mb-5`}>Key findings from this scan</p>
-                      <div className="space-y-4">
-                        <InsightRow label="Model Used" value="Random Forest (Tuned)" darkMode={darkMode} />
-                        <InsightRow label="Scoring Formula" value="Prob × Impact × 100" darkMode={darkMode} />
-                        <InsightRow label="Explainability" value="SHAP + Permutation" darkMode={darkMode} />
-                        <InsightRow label="Critical Threshold" value="Score ≥ 80" darkMode={darkMode} />
-                        <InsightRow label="High Threshold" value="Score 60 – 79" darkMode={darkMode} />
-                        <InsightRow label="Total High+Critical" value={results.critical + results.high} darkMode={darkMode} />
-                      </div>
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
+                    <div className={`${bgCard} border ${border} rounded-lg p-4`}>
+                      <p className="text-xs font-semibold mb-2">RISK vs CONFIDENCE SCATTER</p>
+                      <ResponsiveContainer width="100%" height={230}>
+                        <ScatterChart>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis type="number" dataKey="x" name="Confidence" domain={[0, 1]} tick={{ fontSize: 11 }} />
+                          <YAxis type="number" dataKey="y" name="Risk Score" domain={[0, 100]} tick={{ fontSize: 11 }} />
+                          <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+                          <Scatter data={scatterData} fill="#EA580C" />
+                        </ScatterChart>
+                      </ResponsiveContainer>
                     </div>
-
-                    <div className={`col-span-2 ${bgCard} rounded-xl border ${borderColor} shadow-sm p-6 transition-colors`}>
-                      <h3 className={`font-semibold ${textPrimary} mb-1`}>High & Critical Risk Logs</h3>
-                      <p className={`text-sm ${textSecondary} mb-4`}>Top records requiring attention</p>
-                      {highRiskRows.length > 0 ? (
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-sm">
-                            <thead>
-                              <tr className={`border-b ${borderColor} text-left ${textSecondary}`}>
-                                <th className="pb-3 font-medium">#</th>
-                                <th className="pb-3 font-medium">Probability</th>
-                                <th className="pb-3 font-medium">Impact</th>
-                                <th className="pb-3 font-medium">Risk Score</th>
-                                <th className="pb-3 font-medium">Level</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {highRiskRows.map((row, idx) => (
-                                <tr key={idx} className={`border-b ${borderColor} last:border-0`}>
-                                  <td className={`py-2.5 ${textSecondary}`}>{idx + 1}</td>
-                                  <td className="py-2.5">{Number(row.probability).toFixed(4)}</td>
-                                  <td className="py-2.5">{Number(row.impact).toFixed(4)}</td>
-                                  <td className="py-2.5 font-semibold">{Number(row.risk_score).toFixed(2)}</td>
-                                  <td className="py-2.5">
-                                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                                      row.risk_level === 'Critical'
-                                        ? 'bg-red-100 text-red-700'
-                                        : 'bg-orange-100 text-orange-700'
-                                    }`}>
-                                      {row.risk_level}
-                                    </span>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      ) : (
-                        <div className={`text-center py-10 ${textSecondary} text-sm`}>
-                          No High or Critical records in the returned sample
-                        </div>
-                      )}
+                    <div className={`${bgCard} border ${border} rounded-lg p-4`}>
+                      <p className="text-xs font-semibold mb-2">RISK TREND LINE</p>
+                      <ResponsiveContainer width="100%" height={230}>
+                        <LineChart data={lineData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="point" tick={{ fontSize: 11 }} />
+                          <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
+                          <Tooltip />
+                          <Legend />
+                          <Line type="monotone" dataKey="risk" stroke="#DC2626" dot={false} name="Risk score" />
+                          <Line type="monotone" dataKey="avg" stroke="#3E522C" dot={false} name="Running average" />
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
                   </div>
 
-                  {/* Live Mode + Download Button */}
-                  <div className="flex items-center justify-between bg-[#E8EDE0] rounded-xl px-5 py-3.5 text-sm text-[#1F2A1A]">
-                    <div className="flex items-center gap-2">
-                      <Shield size={16} />
-                      <span>
-                        <strong>Live Mode:</strong> Results generated by your trained model. 
-                        Download includes full original log fields + risk scores.
-                      </span>
+                  <div className={`${bgCard} border ${border} rounded-lg p-4`}>
+                    <p className="text-xs font-semibold mb-3">CONTROL INSIGHTS</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                      <Note text={`Risk index ${results.avgScore} | median ${results.medianScore} | peak ${results.maxScore}`} />
+                      <Note text={`${results.attention} events in High/Critical follow-up queue`} />
+                      <Note text={`${results.suspicious} logs flagged as suspicious`} />
+                      <Note text={`90th percentile score ${results.p90} indicates upper-tail exposure`} />
                     </div>
-                    <button
-                      onClick={handleExport}
-                      className="flex items-center gap-2 px-4 py-2 bg-[#4A5C2E] hover:bg-[#3A4A24] text-white text-sm font-medium rounded-lg transition"
-                    >
-                      <Download size={16} />
-                      Download Full Audit Log with Risk Scores
-                    </button>
                   </div>
                 </>
-              ) : (
-                <div className={`flex flex-col items-center justify-center py-28 ${textSecondary}`}>
-                  <div className={`w-20 h-20 rounded-full ${darkMode ? 'bg-[#1A2218]' : 'bg-gray-100'} flex items-center justify-center mb-5`}>
-                    <Shield size={36} className="opacity-40" />
-                  </div>
-                  <p className={`text-lg font-medium ${textPrimary}`}>No analysis yet</p>
-                  <p className="text-sm mt-1">Upload a processed firewall log CSV to begin risk scoring</p>
-                </div>
               )}
             </>
-          )}
-
-          {activeTab === 'dashboard' && (
-            <Placeholder title="Dashboard Overview" desc="Overall system summary will appear here" icon={<LayoutDashboard size={48} />} darkMode={darkMode} />
-          )}
-
-          {activeTab !== 'risk-scoring' && activeTab !== 'dashboard' && (
-            <Placeholder
-              title={activeTab.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-              desc="This module is under development"
-              icon={<Settings size={48} />}
-              darkMode={darkMode}
-            />
           )}
         </main>
       </div>
@@ -373,47 +363,30 @@ function App() {
   )
 }
 
-function NavItem({ icon, label, active = false, onClick }) {
+function mean(a) { return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0 }
+function quantile(a, q) {
+  if (!a.length) return 0
+  const s = [...a].sort((x, y) => x - y)
+  return s[Math.min(s.length - 1, Math.floor(q * (s.length - 1)))]
+}
+function n1(v) { return Number(v || 0).toFixed(1) }
+function pct(n, d) { return d ? ((n / d) * 100).toFixed(1) : 0 }
+
+function Tile({ label, value, color }) {
   return (
-    <div
-      onClick={onClick}
-      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-sm transition-all ${
-        active
-          ? 'bg-[#4A5C2E] text-white font-medium'
-          : 'text-gray-300 hover:bg-[#2E3B28] hover:text-white'
-      }`}
-    >
-      {icon}
-      <span>{label}</span>
+    <div className={`${color} text-white rounded-lg p-3`}>
+      <p className="text-[10px] uppercase tracking-wide text-white/80">{label}</p>
+      <p className="text-2xl font-bold mt-1">{value}</p>
     </div>
   )
 }
-
-function MetricCard({ title, value, subtitle, color }) {
-  return (
-    <div className={`${color} text-white rounded-xl p-5 shadow-sm`}>
-      <p className="text-sm opacity-90 mb-1">{title}</p>
-      <p className="text-3xl font-bold tracking-tight">{value}</p>
-      <p className="text-xs opacity-80 mt-2">{subtitle}</p>
-    </div>
-  )
+function Note({ text }) {
+  return <div className="bg-[#F3F4F6] rounded-md px-3 py-2 text-gray-700">{text}</div>
 }
-
-function InsightRow({ label, value, darkMode }) {
+function NavItem({ icon, label, active, onClick }) {
   return (
-    <div className={`flex items-center justify-between py-2 border-b last:border-0 ${darkMode ? 'border-[#2A3526]' : 'border-gray-100'}`}>
-      <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{label}</span>
-      <span className={`text-sm font-medium ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>{value}</span>
-    </div>
-  )
-}
-
-function Placeholder({ title, desc, icon, darkMode }) {
-  return (
-    <div className={`flex flex-col items-center justify-center py-32 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-      <div className="opacity-40 mb-4">{icon}</div>
-      <p className={`text-lg font-medium ${darkMode ? 'text-gray-300' : ''}`}>{title}</p>
-      <p className="text-sm mt-1">{desc}</p>
+    <div onClick={onClick} className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm cursor-pointer ${active ? 'bg-[#3E522C] text-white' : 'text-gray-300 hover:bg-[#1A261E]'}`}>
+      {icon}<span>{label}</span>
     </div>
   )
 }
