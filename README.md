@@ -1,14 +1,20 @@
-# Firewall Risk Scoring Engine
+# R26-CS-004 – Audixa
 
-**Component**: Intelligent Firewall Log Risk Scoring Engine  
-**Student**: Rathnayaka R.M.R.S
-**Branch**: it22156860  
+AI-supported IT Audit Intelligence System
 
-## Risk Calculation Formula
-Risk Score = Probability × Impact × 100
+## Branches
+- main : stable team code
+- dev : integration branch
+- it22156860 : Risk Scoring Engine
+- it22111692 : Recommendation Engine
+- it22167064 : Compliance Analysis Engine
+- log-classification-engine : Log Classification Engine
 
-## Project Structure
-- `src/` → Main code
-- `data/` → Dataset
-- `models/` → Trained models
-- `app.py` → Demo application
+## Rules
+1. Do not push directly to main
+2. Work only on your assigned branch
+3. Integrate through dev
+4. Keep each component inside services/<component-name>
+
+## Risk Scoring Engine
+Location: services/risk-scoring

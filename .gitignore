@@ -3,3 +3,12 @@ models/*.pkl
 *.pkl
 *.csv
 .DS_Store
+__pycache__/
+*.pyc
+.venv/
+venv/
+node_modules/
+frontend/node_modules/
+services/**/frontend/node_modules/
+dist/
+frontend/.vite/
