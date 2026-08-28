@@ -1,0 +1,101 @@
+Timestamp,Source IP Address,Destination IP Address,Attack Type,Anomaly Scores,Action Taken,Protocol,Network Segment,Malware Indicators,Firewall Logs,IDS/IPS Alerts
+2023-09-03 18:27:02,8.47.111.60,192.168.8.155,Phishing,72.96,Ignored,TCP,Finance,Detected,Log Data,Alert Triggered
+2023-03-23 13:21:17,40.110.172.27,192.168.1.98,Phishing,74.5,Blocked,TCP,DMZ,Not Detected,Log Data,No Alert
+2023-07-03 17:18:53,161.185.98.181,192.168.1.12,Malware,92.71,Ignored,UDP,IT,Not Detected,Log Data,No Alert
+2023-03-12 11:13:42,69.36.87.137,192.168.3.42,Ransomware,80.9,Allowed,HTTP,Finance,Not Detected,Log Data,No Alert
+2023-06-13 08:04:13,146.161.108.168,192.168.7.102,Malware,79.85,Blocked,HTTP,DMZ,Detected,No Log,Alert Triggered
+2023-07-12 07:08:32,127.46.24.221,192.168.1.40,DDoS,86.31,Blocked,UDP,HR,Not Detected,Log Data,No Alert
+2023-09-28 00:43:46,30.136.174.29,192.168.4.112,Ransomware,31.37,Ignored,UDP,Executive,Not Detected,Log Data,No Alert
+2023-11-17 19:12:09,96.82.0.154,192.168.5.126,Intrusion,63.15,Allowed,TCP,IT,Not Detected,Log Data,Alert Triggered
+2023-02-03 23:31:52,18.64.65.169,192.168.7.243,DDoS,84.63,Allowed,HTTPS,IT,Not Detected,Log Data,Alert Triggered
+2023-04-23 09:25:42,167.191.224.231,192.168.8.116,DDoS,72.04,Allowed,TCP,DMZ,Not Detected,Log Data,No Alert
+2023-11-02 07:04:57,9.169.36.132,192.168.3.72,Malware,16.03,Blocked,HTTP,Finance,Not Detected,Log Data,Alert Triggered
+2023-07-07 03:06:42,111.181.216.106,192.168.7.222,Malware,50.2,Ignored,TCP,HR,Not Detected,Log Data,Alert Triggered
+2023-09-15 04:27:11,72.236.127.224,192.168.1.114,Phishing,26.29,Blocked,HTTPS,Finance,Not Detected,No Log,Alert Triggered
+2023-08-16 06:55:25,16.84.194.1,192.168.6.68,DDoS,24.14,Allowed,HTTP,DMZ,Not Detected,No Log,No Alert
+2023-12-18 01:47:20,15.25.244.129,192.168.8.41,Malware,14.97,Ignored,TCP,DMZ,Not Detected,Log Data,Alert Triggered
+2023-10-08 18:38:02,159.41.214.169,192.168.9.145,Unknown,44.32,Allowed,HTTPS,Finance,Detected,Log Data,No Alert
+2023-05-15 10:59:48,19.4.234.160,192.168.9.26,Malware,67.09,Blocked,TCP,IT,Not Detected,Log Data,Alert Triggered
+2023-03-15 17:45:19,157.4.153.239,192.168.10.27,Intrusion,41.41,Blocked,UDP,DMZ,Not Detected,No Log,No Alert
+2023-11-21 08:32:31,65.26.47.163,192.168.6.213,Malware,39.14,Ignored,ICMP,Finance,Detected,Log Data,Alert Triggered
+2023-07-18 00:07:04,177.76.18.214,192.168.5.150,DDoS,56.89,Allowed,HTTPS,IT,Not Detected,Log Data,No Alert
+2023-06-07 21:15:42,27.181.208.250,192.168.9.192,DDoS,13.39,Blocked,UDP,HR,Not Detected,No Log,No Alert
+2023-12-11 13:51:42,222.127.136.41,192.168.1.98,Unknown,12.11,Allowed,TCP,HR,Not Detected,No Log,No Alert
+2023-04-01 21:12:25,85.142.35.248,192.168.4.90,Unknown,84.06,Blocked,HTTPS,HR,Not Detected,Log Data,No Alert
+2023-05-02 03:38:27,89.160.223.156,192.168.8.30,Malware,59.35,Blocked,HTTP,DMZ,Detected,No Log,Alert Triggered
+2023-12-24 23:42:12,94.220.35.243,192.168.10.236,Unknown,55.77,Blocked,ICMP,HR,Not Detected,Log Data,No Alert
+2023-05-18 04:12:26,171.194.89.158,192.168.9.78,Phishing,44.2,Ignored,HTTP,Finance,Detected,Log Data,No Alert
+2023-08-15 21:13:32,122.86.43.73,192.168.8.170,Intrusion,37.39,Blocked,HTTPS,Finance,Detected,No Log,No Alert
+2023-08-20 02:29:26,162.99.196.127,192.168.6.63,Malware,30.81,Ignored,UDP,HR,Detected,Log Data,Alert Triggered
+2023-12-17 14:03:35,64.62.233.35,192.168.7.171,Phishing,28.6,Allowed,HTTPS,Finance,Not Detected,No Log,No Alert
+2023-07-27 17:28:57,41.243.230.67,192.168.3.216,Unknown,85.82,Blocked,ICMP,DMZ,Not Detected,Log Data,No Alert
+2023-06-11 17:05:08,39.118.196.178,192.168.2.181,Ransomware,29.93,Blocked,UDP,DMZ,Detected,Log Data,No Alert
+2023-10-23 00:54:56,196.194.244.2,192.168.5.77,DDoS,43.11,Blocked,HTTP,Executive,Not Detected,Log Data,No Alert
+2023-05-14 15:01:24,87.207.84.216,192.168.7.236,Unknown,51.5,Ignored,UDP,Executive,Not Detected,No Log,No Alert
+2023-03-28 14:11:03,67.194.167.55,192.168.7.84,Unknown,64.63,Blocked,ICMP,DMZ,Not Detected,Log Data,Alert Triggered
+2023-12-18 01:22:14,167.35.20.194,192.168.0.244,Ransomware,49.98,Blocked,UDP,Executive,Not Detected,Log Data,No Alert
+2023-08-23 08:49:23,43.58.83.247,192.168.4.28,DDoS,90.56,Ignored,HTTPS,Finance,Detected,Log Data,Alert Triggered
+2023-10-23 20:15:06,179.154.61.204,192.168.9.201,DDoS,26.86,Ignored,TCP,IT,Not Detected,Log Data,No Alert
+2023-08-04 13:23:40,213.235.78.112,192.168.2.188,Malware,45.7,Ignored,HTTPS,Executive,Detected,Log Data,Alert Triggered
+2023-10-09 10:54:15,213.44.142.226,192.168.7.63,Unknown,80.19,Ignored,HTTP,IT,Not Detected,No Log,No Alert
+2023-05-11 08:56:38,180.141.5.133,192.168.3.22,Phishing,40.16,Blocked,UDP,Executive,Not Detected,Log Data,No Alert
+2023-01-03 09:14:25,178.124.156.170,192.168.9.95,Ransomware,48.09,Ignored,HTTP,Executive,Detected,Log Data,No Alert
+2023-05-08 03:46:12,81.61.94.50,192.168.3.190,Phishing,33.03,Blocked,HTTP,IT,Not Detected,Log Data,No Alert
+2023-04-12 05:19:00,182.64.140.12,192.168.0.142,Malware,26.5,Allowed,ICMP,DMZ,Not Detected,Log Data,Alert Triggered
+2023-08-15 10:11:03,65.244.58.211,192.168.1.103,Phishing,34.17,Ignored,HTTP,HR,Not Detected,Log Data,Alert Triggered
+2023-09-25 13:38:38,203.115.194.116,192.168.7.77,DDoS,31.1,Blocked,HTTPS,Finance,Not Detected,No Log,Alert Triggered
+2023-11-07 08:42:05,41.122.88.142,192.168.1.41,Unknown,74.83,Ignored,TCP,IT,Detected,No Log,Alert Triggered
+2023-02-22 07:59:16,202.101.217.30,192.168.8.58,Intrusion,83.07,Blocked,UDP,DMZ,Detected,Log Data,Alert Triggered
+2023-05-15 03:29:44,78.206.139.129,192.168.8.127,Unknown,58.38,Blocked,HTTP,HR,Detected,Log Data,No Alert
+2023-11-27 18:37:01,196.137.20.196,192.168.2.121,DDoS,29.46,Allowed,HTTPS,Finance,Not Detected,Log Data,Alert Triggered
+2023-06-14 10:20:42,27.82.168.106,192.168.7.74,Phishing,17.76,Blocked,HTTP,IT,Not Detected,Log Data,No Alert
+2023-09-27 00:42:55,139.236.211.14,192.168.3.133,Ransomware,75.67,Blocked,ICMP,DMZ,Detected,Log Data,Alert Triggered
+2023-08-23 15:07:01,162.122.81.80,192.168.8.4,Phishing,88.85,Ignored,HTTPS,Executive,Not Detected,Log Data,No Alert
+2023-08-23 09:32:45,70.212.247.251,192.168.7.63,Intrusion,80.73,Allowed,HTTP,HR,Not Detected,Log Data,Alert Triggered
+2023-07-11 16:17:52,1.144.152.215,192.168.9.149,Phishing,15.93,Blocked,HTTP,Executive,Not Detected,Log Data,Alert Triggered
+2023-06-28 06:44:15,147.196.119.220,192.168.6.12,Unknown,48.7,Ignored,ICMP,Executive,Detected,Log Data,No Alert
+2023-01-05 16:37:21,223.51.225.26,192.168.8.234,Ransomware,52.1,Blocked,HTTP,Executive,Not Detected,No Log,No Alert
+2023-06-20 22:25:41,21.168.194.245,192.168.5.161,DDoS,92.38,Blocked,HTTP,HR,Not Detected,Log Data,No Alert
+2023-02-14 03:48:40,181.51.227.43,192.168.4.232,Unknown,29.34,Ignored,TCP,Finance,Detected,Log Data,Alert Triggered
+2023-03-06 05:05:39,223.195.123.128,192.168.9.37,DDoS,58.1,Blocked,UDP,Finance,Not Detected,Log Data,No Alert
+2023-09-06 02:28:22,151.153.217.177,192.168.4.117,Intrusion,34.45,Blocked,ICMP,IT,Not Detected,No Log,No Alert
+2023-12-10 00:53:42,102.140.4.145,192.168.10.200,DDoS,35.15,Allowed,TCP,Executive,Detected,Log Data,Alert Triggered
+2023-04-21 06:39:16,174.70.49.232,192.168.10.166,Unknown,78.16,Allowed,TCP,Executive,Not Detected,No Log,Alert Triggered
+2023-07-06 06:08:50,139.187.139.213,192.168.2.66,Malware,37.77,Blocked,HTTP,Executive,Not Detected,Log Data,No Alert
+2023-04-28 21:46:43,102.187.46.203,192.168.6.4,Unknown,21.96,Ignored,ICMP,IT,Detected,Log Data,No Alert
+2023-06-04 21:14:30,7.167.113.166,192.168.1.163,Intrusion,64.28,Blocked,HTTP,Executive,Not Detected,Log Data,Alert Triggered
+2023-02-04 07:56:34,35.198.232.95,192.168.10.244,Unknown,94.65,Ignored,HTTPS,IT,Detected,Log Data,Alert Triggered
+2023-05-02 22:23:13,114.227.120.219,192.168.5.26,Intrusion,89.82,Allowed,ICMP,HR,Not Detected,No Log,No Alert
+2023-02-22 06:41:40,153.10.25.202,192.168.5.63,Intrusion,80.06,Blocked,UDP,IT,Detected,No Log,No Alert
+2023-06-25 04:50:57,153.1.141.220,192.168.2.253,Ransomware,83.92,Blocked,UDP,HR,Not Detected,Log Data,Alert Triggered
+2023-10-11 00:11:16,14.64.215.135,192.168.1.191,Intrusion,77.02,Blocked,TCP,HR,Not Detected,Log Data,Alert Triggered
+2023-11-17 09:29:41,8.31.245.217,192.168.6.110,Intrusion,13.69,Ignored,TCP,IT,Detected,Log Data,No Alert
+2023-11-19 17:45:20,98.150.232.130,192.168.9.111,Intrusion,33.38,Blocked,TCP,Executive,Detected,Log Data,Alert Triggered
+2023-08-08 13:21:52,117.204.212.187,192.168.1.81,Ransomware,28.28,Allowed,HTTP,Finance,Not Detected,No Log,No Alert
+2023-02-14 03:47:47,96.66.30.151,192.168.8.144,Malware,80.7,Blocked,ICMP,IT,Detected,No Log,Alert Triggered
+2023-05-20 09:22:06,148.108.79.169,192.168.7.58,Phishing,71.29,Blocked,TCP,Executive,Not Detected,No Log,No Alert
+2023-10-20 21:41:35,7.136.14.47,192.168.4.180,Malware,81.84,Blocked,ICMP,DMZ,Not Detected,Log Data,No Alert
+2023-11-01 02:47:33,56.192.214.117,192.168.5.41,Unknown,22.06,Blocked,ICMP,IT,Not Detected,Log Data,No Alert
+2023-10-02 21:05:17,114.217.248.156,192.168.7.107,Malware,23.38,Allowed,ICMP,IT,Not Detected,Log Data,Alert Triggered
+2023-11-10 01:14:25,154.28.3.53,192.168.4.243,Malware,51.36,Blocked,UDP,DMZ,Not Detected,Log Data,No Alert
+2023-09-23 07:32:35,214.181.36.102,192.168.0.112,Ransomware,20.98,Blocked,TCP,IT,Detected,Log Data,No Alert
+2023-02-13 00:20:10,206.235.185.23,192.168.6.217,Intrusion,45.5,Allowed,TCP,Finance,Not Detected,Log Data,No Alert
+2023-03-03 16:40:07,136.99.178.90,192.168.10.209,Malware,28.83,Blocked,UDP,DMZ,Detected,No Log,No Alert
+2023-11-16 14:48:36,195.229.165.222,192.168.10.81,Malware,16.41,Blocked,UDP,HR,Detected,Log Data,No Alert
+2023-05-15 14:02:03,95.146.39.166,192.168.1.158,Intrusion,53.12,Blocked,HTTPS,Executive,Detected,Log Data,Alert Triggered
+2023-10-21 06:20:38,122.77.31.116,192.168.1.208,Intrusion,87.27,Ignored,ICMP,Executive,Not Detected,Log Data,Alert Triggered
+2023-09-20 05:23:23,73.198.209.199,192.168.5.174,Unknown,47.35,Ignored,HTTPS,Finance,Detected,Log Data,No Alert
+2023-11-20 04:21:05,150.72.179.80,192.168.10.179,DDoS,71.52,Blocked,HTTP,IT,Detected,Log Data,Alert Triggered
+2023-12-22 16:05:41,172.216.185.5,192.168.5.80,DDoS,66.96,Blocked,UDP,Finance,Not Detected,No Log,No Alert
+2023-02-17 17:53:47,135.19.172.225,192.168.9.34,Unknown,16.56,Allowed,HTTPS,IT,Not Detected,Log Data,Alert Triggered
+2023-01-14 11:43:46,61.227.145.193,192.168.7.60,Malware,71.3,Blocked,HTTPS,HR,Not Detected,Log Data,No Alert
+2023-05-25 12:32:33,108.82.102.206,192.168.9.36,Malware,47.45,Allowed,ICMP,Executive,Detected,Log Data,No Alert
+2023-05-03 05:17:28,132.75.223.24,192.168.3.210,DDoS,82.35,Allowed,HTTP,Executive,Not Detected,Log Data,No Alert
+2023-04-01 10:59:06,215.171.74.36,192.168.0.74,Unknown,16.94,Blocked,HTTP,Finance,Not Detected,Log Data,Alert Triggered
+2023-04-27 04:35:46,156.216.56.199,192.168.4.61,Phishing,11.62,Allowed,ICMP,HR,Not Detected,Log Data,No Alert
+2023-10-18 00:40:32,148.123.73.75,192.168.6.1,DDoS,86.94,Blocked,HTTPS,HR,Not Detected,Log Data,Alert Triggered
+2023-09-18 16:50:32,142.10.199.224,192.168.7.12,Malware,15.75,Blocked,HTTP,DMZ,Not Detected,Log Data,No Alert
+2023-02-25 18:47:48,86.68.22.91,192.168.8.87,Unknown,65.85,Ignored,UDP,IT,Not Detected,Log Data,Alert Triggered
+2023-08-02 09:12:02,203.102.21.81,192.168.4.132,Ransomware,70.86,Allowed,HTTP,Executive,Not Detected,Log Data,Alert Triggered
+2023-01-28 20:21:17,32.188.223.228,192.168.6.191,Unknown,83.28,Blocked,HTTP,DMZ,Detected,Log Data,Alert Triggered
+2023-05-26 02:46:27,21.220.92.140,192.168.4.83,Unknown,77.77,Blocked,TCP,Executive,Detected,Log Data,Alert Triggered
