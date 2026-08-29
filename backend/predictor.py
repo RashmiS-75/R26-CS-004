@@ -1,247 +1,409 @@
-import joblib
-import pandas as pd
-
 from pathlib import Path
 
-
-
-# PATHS
-
-
-BASE_DIR = Path(
-    __file__
-).resolve().parent.parent
-
-MODEL_DIR = BASE_DIR / "models"
-
-
-
-# FIREWALL COMPLIANCE PREDICTOR
+import joblib
+import numpy as np
+import pandas as pd
 
 
 class FirewallPredictor:
-    """
-    Loads the trained preprocessing pipeline,
-    Random Forest model, XGBoost model and ensemble settings.
 
-    Model convention:
-        1 = Compliant
-        0 = Non-Compliant
-    """
+    BASE_DIR = (
+        Path(__file__).resolve().parent.parent
+    )
+
+    MODEL_DIR = BASE_DIR / "models"
+
+
+    FALLBACK_COLUMNS = [
+
+        "Source_Zone",
+        "Source_Address",
+        "Source_User",
+        "Source_Device",
+
+        "Destination_Zone",
+        "Destination_Address",
+
+        "Application",
+        "Service",
+        "URL_Category",
+
+        "Action",
+        "Profile",
+        "Options",
+
+        "Rule_Usage",
+        "Description",
+
+        "Rule_Usage_Hit_Count",
+        "Rule_Usage_Last_Hit",
+        "Rule_Usage_First_Hit",
+
+        "Rule_Usage_Apps_Seen",
+        "Days_With_No_New_Apps",
+
+        "Modified",
+        "Created",
+
+        "Firewall_ID",
+        "Vendor",
+
+        "Rule_Order",
+        "Chain",
+        "Direction",
+
+        "Source_IP_Type",
+        "Destination_IP_Type",
+
+        "Source_Port",
+        "Destination_Port",
+
+        "Protocol",
+        "Logging",
+        "Enabled",
+        "Schedule",
+        "NAT",
+
+        "User_Group",
+        "Interface_In",
+        "Interface_Out",
+
+        "Expected_Action",
+        "Control_ID",
+        "Control_Requirement",
+    ]
+
 
     def __init__(self):
 
-       
-        # Load preprocessing pipeline
-        
-
         self.preprocessor = joblib.load(
-            MODEL_DIR / "preprocessor.joblib"
+            self.MODEL_DIR /
+            "preprocessor.joblib"
         )
-
-        
-        # Load Random Forest
-        
 
         self.random_forest = joblib.load(
-            MODEL_DIR / "random_forest.joblib"
+            self.MODEL_DIR /
+            "random_forest.joblib"
         )
-
-        
-        # Load XGBoost
-        
 
         self.xgboost = joblib.load(
-            MODEL_DIR / "xgboost.joblib"
+            self.MODEL_DIR /
+            "xgboost.joblib"
         )
 
-        
-        # Load ensemble configuration
-        
-
-        self.ensemble_config = joblib.load(
-            MODEL_DIR / "ensemble_config.joblib"
+        self.ensemble_config = (
+            self.load_ensemble_config()
         )
 
-        # Safely read configuration
+        self.rf_weight = 0.5
+        self.xgb_weight = 0.5
+        self.threshold = 0.5
+
+        self.configure()
+
+
+    def load_ensemble_config(self):
+
+        path = (
+            self.MODEL_DIR /
+            "ensemble_config.joblib"
+        )
+
+        if not path.exists():
+
+            return {}
+
+
+        try:
+
+            config = joblib.load(
+                path
+            )
+
+            if isinstance(config, dict):
+                return config
+
+        except Exception as error:
+
+            print(
+                "Warning:",
+                error,
+            )
+
+
+        return {}
+
+
+    def configure(self):
+
+        config = self.ensemble_config
+
+
         self.rf_weight = float(
-            self.ensemble_config.get(
+            config.get(
                 "random_forest_weight",
-                0.5
+                config.get(
+                    "rf_weight",
+                    0.5,
+                ),
             )
         )
+
 
         self.xgb_weight = float(
-            self.ensemble_config.get(
+            config.get(
                 "xgboost_weight",
-                0.5
+                config.get(
+                    "xgb_weight",
+                    0.5,
+                ),
             )
         )
+
 
         self.threshold = float(
-            self.ensemble_config.get(
+            config.get(
                 "threshold",
-                0.5
+                config.get(
+                    "decision_threshold",
+                    0.5,
+                ),
             )
         )
 
-        
-        # Exact features used during training
-        
 
-        self.expected_columns = list(
-            self.preprocessor.feature_names_in_
-        )
-
-        
-        # Validate weights
-        
-
-        total_weight = (
+        total = (
             self.rf_weight +
             self.xgb_weight
         )
 
-        if total_weight <= 0:
 
-            raise ValueError(
-                "Invalid ensemble weights."
+        if total <= 0:
+
+            self.rf_weight = 0.5
+            self.xgb_weight = 0.5
+
+        else:
+
+            self.rf_weight /= total
+            self.xgb_weight /= total
+
+
+    def get_expected_columns(self):
+
+        # Preferred: columns remembered by fitted preprocessor
+        names = getattr(
+            self.preprocessor,
+            "feature_names_in_",
+            None,
+        )
+
+        if names is not None:
+
+            return list(names)
+
+
+        # Some pipelines expose this
+        try:
+
+            names = (
+                self.preprocessor
+                .get_feature_names_out()
             )
 
-    
-    # MULTIPLE RULE PREDICTION
-    
+            if names is not None:
+
+                return list(names)
+
+        except Exception:
+            pass
+
+
+        # Fallback
+        return self.FALLBACK_COLUMNS
+
+
+    def prepare_dataframe(
+        self,
+        dataframe,
+    ):
+
+        dataframe = dataframe.copy()
+
+        expected_columns = (
+            self.get_expected_columns()
+        )
+
+
+        for column in expected_columns:
+
+            if column not in dataframe.columns:
+
+                dataframe[column] = ""
+
+
+        dataframe = dataframe[
+            expected_columns
+        ]
+
+
+        numeric_columns = [
+
+            "Rule_Usage_Hit_Count",
+            "Rule_Usage_Apps_Seen",
+            "Days_With_No_New_Apps",
+            "Rule_Order",
+            "Source_Port",
+            "Destination_Port",
+
+        ]
+
+
+        for column in numeric_columns:
+
+            if column in dataframe.columns:
+
+                dataframe[column] = (
+                    pd.to_numeric(
+                        dataframe[column],
+                        errors="coerce",
+                    )
+                )
+
+
+        return dataframe
+
+
+    @staticmethod
+    def positive_probability(
+        model,
+        processed,
+    ):
+
+        probabilities = (
+            model.predict_proba(
+                processed
+            )
+        )
+
+
+        if probabilities.ndim != 2:
+
+            return np.asarray(
+                probabilities,
+                dtype=float,
+            )
+
+
+        if probabilities.shape[1] == 1:
+
+            return probabilities[:, 0]
+
+
+        classes = getattr(
+            model,
+            "classes_",
+            None,
+        )
+
+
+        if classes is not None:
+
+            classes = list(classes)
+
+            if 1 in classes:
+
+                return probabilities[
+                    :,
+                    classes.index(1),
+                ]
+
+
+        return probabilities[:, -1]
+
 
     def predict_rules(
         self,
-        rules_df: pd.DataFrame
+        dataframe,
     ):
 
-        if rules_df is None:
+        prepared = self.prepare_dataframe(
+            dataframe
+        )
 
-            raise ValueError(
-                "Rules dataframe is missing."
-            )
 
-        if rules_df.empty:
-
-            raise ValueError(
-                "No firewall rules were provided."
-            )
-
-        
-        # Validate required features
-        
-
-        missing_columns = [
-            column
-            for column in self.expected_columns
-            if column not in rules_df.columns
-        ]
-
-        if missing_columns:
-
-            raise ValueError(
-                "Missing required configuration features: "
-                +
-                ", ".join(
-                    missing_columns
-                )
-            )
-
-       
-        # Exact training feature order
-        
-
-        input_df = rules_df[
-            self.expected_columns
-        ].copy()
-
-        
-        # Apply same preprocessing
-        
-
-        processed_data = (
+        # Keep a DataFrame with column names
+        # when transforming/predicting.
+        processed = (
             self.preprocessor.transform(
-                input_df
+                prepared
             )
         )
 
-        
-        # Model probabilities
-        #
-        # Class 1 = Compliant
-        
 
-        rf_probabilities = (
-            self.random_forest
-            .predict_proba(
-                processed_data
-            )[:, 1]
+        rf_probability = (
+            self.positive_probability(
+                self.random_forest,
+                processed,
+            )
         )
 
-        xgb_probabilities = (
-            self.xgboost
-            .predict_proba(
-                processed_data
-            )[:, 1]
+
+        xgb_probability = (
+            self.positive_probability(
+                self.xgboost,
+                processed,
+            )
         )
 
-        
-        # Weighted ensemble
-        
 
-        ensemble_probabilities = (
-            self.rf_weight
-            * rf_probabilities
+        ensemble_probability = (
+            (
+                self.rf_weight *
+                rf_probability
+            )
             +
-            self.xgb_weight
-            * xgb_probabilities
+            (
+                self.xgb_weight *
+                xgb_probability
+            )
         )
 
-        
-        # Final prediction
-        #
-        # 1 = Compliant
-        # 0 = Non-Compliant
-        
 
         predictions = (
-            ensemble_probabilities
+            ensemble_probability
             >= self.threshold
         ).astype(int)
 
-        
-        # Build results
-        
 
         results = []
 
-        for index in range(
-            len(input_df)
+
+        for index, prediction in enumerate(
+            predictions
         ):
 
-            prediction = int(
-                predictions[index]
+            probability = float(
+                ensemble_probability[index]
             )
 
-            rf_probability = float(
-                rf_probabilities[index]
-            )
 
-            xgb_probability = float(
-                xgb_probabilities[index]
-            )
-
-            ensemble_probability = float(
-                ensemble_probabilities[index]
-            )
+            # Project convention:
+            # 1 = Compliant
+            # 0 = Non-Compliant
 
             status = (
                 "Compliant"
-                if prediction == 1
+                if int(prediction) == 1
                 else "Non-Compliant"
             )
+
+
+            confidence = max(
+                probability,
+                1 - probability,
+            )
+
 
             results.append({
 
@@ -249,91 +411,40 @@ class FirewallPredictor:
                     index + 1,
 
                 "prediction":
-                    prediction,
+                    int(prediction),
 
                 "status":
                     status,
 
                 "random_forest_probability":
                     round(
-                        rf_probability,
-                        4
+                        float(
+                            rf_probability[index]
+                        ),
+                        4,
                     ),
 
                 "xgboost_probability":
                     round(
-                        xgb_probability,
-                        4
+                        float(
+                            xgb_probability[index]
+                        ),
+                        4,
                     ),
 
                 "ensemble_probability":
                     round(
-                        ensemble_probability,
-                        4
-                    )
+                        probability,
+                        4,
+                    ),
+
+                "confidence":
+                    round(
+                        float(confidence),
+                        4,
+                    ),
 
             })
 
+
         return results
-
-    
-    # SINGLE RULE
-    
-
-    def predict_rule(
-        self,
-        rule_data: dict
-    ):
-
-        dataframe = pd.DataFrame(
-            [rule_data]
-        )
-
-        results = self.predict_rules(
-            dataframe
-        )
-
-        return results[0]
-
-
-
-# TEST
-
-
-if __name__ == "__main__":
-
-    print("=" * 70)
-    print("FIREWALL PREDICTOR TEST")
-    print("=" * 70)
-
-    predictor = FirewallPredictor()
-
-    print(
-        "\nModels loaded successfully."
-    )
-
-    print(
-        "Random Forest weight:",
-        predictor.rf_weight
-    )
-
-    print(
-        "XGBoost weight:",
-        predictor.xgb_weight
-    )
-
-    print(
-        "Decision threshold:",
-        predictor.threshold
-    )
-
-    print(
-        "Expected input features:",
-        len(
-            predictor.expected_columns
-        )
-    )
-
-    print(
-        "\nPredictor is ready."
-    )
