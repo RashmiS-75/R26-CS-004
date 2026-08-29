@@ -8,10 +8,10 @@ __pycache__/
 # Environment
 .env
 
-# Dataset
+# Training / analysis dataset
 dataset/
 
-# Root training scripts
+# Root training / analysis source
 /src/
 
 # Generated results
@@ -20,7 +20,7 @@ results/
 # Runtime uploads
 uploads/
 
-# React dependencies/build
+# React
 frontend-react/node_modules/
 frontend-react/dist/
 
