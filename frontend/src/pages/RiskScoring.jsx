@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Upload } from 'lucide-react'
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
@@ -19,6 +19,21 @@ function RiskScoring() {
   const [heat, setHeat] = useState([])
   const [scatterData, setScatterData] = useState([])
   const [lineData, setLineData] = useState([])
+  const [history, setHistory] = useState([])
+  const [showHistory, setShowHistory] = useState(false)
+
+  const loadHistory = async () => {
+    try {
+      const res = await fetch('http://127.0.0.1:8080/risk/sessions')
+      if (res.ok) setHistory(await res.json())
+    } catch {
+      setHistory([])
+    }
+  }
+
+  useEffect(() => {
+    loadHistory()
+  }, [])
 
   const handleAnalyze = async () => {
     if (!file) return alert('Please upload a firewall log CSV first')
@@ -54,7 +69,7 @@ function RiskScoring() {
       const attention = critical + high
       const suspicious = rows.filter((r) => r.predicted_label === 1).length
 
-      setResults({
+      const nextResults = {
         total,
         avgScore: n1(summary.avg_score ?? avg),
         maxScore: n1(summary.max_score ?? maxScore),
@@ -63,8 +78,11 @@ function RiskScoring() {
         p90: n1(p90),
         critical, high, medium, low, attention, suspicious,
         coverageHigh: pct(attention, total),
-      })
+      }
+      setResults(nextResults)
       setDetailed(rows)
+      localStorage.setItem('audixa-last-risk', JSON.stringify(nextResults))
+      loadHistory()
 
       const buckets = [
         { range: '0–20', min: 0, max: 20 },
@@ -172,10 +190,50 @@ function RiskScoring() {
           <button onClick={handleExport} className="px-3 py-2 text-xs rounded-md border border-[#3E522C] text-[#3E522C]">
             Export CSV
           </button>
+          <button onClick={() => { setShowHistory(true); loadHistory() }} className="px-3 py-2 text-xs rounded-md border border-gray-300">
+            History
+          </button>
         </div>
       </div>
 
-      {!results ? (
+      {showHistory ? (
+        <div className={`${bgCard} border ${border} rounded-lg p-5`}>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h4 className="font-semibold">Upload History</h4>
+              <p className={`text-xs ${muted}`}>Previously processed risk scoring sessions</p>
+            </div>
+            <button onClick={() => setShowHistory(false)} className="px-3 py-2 text-xs rounded-md border">
+              Back to Assessment
+            </button>
+          </div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left border-b">
+                <th className="p-2">Filename</th>
+                <th className="p-2">Total</th>
+                <th className="p-2">Critical</th>
+                <th className="p-2">High</th>
+                <th className="p-2">Medium</th>
+                <th className="p-2">Low</th>
+              </tr>
+            </thead>
+            <tbody>
+              {history.map((h) => (
+                <tr key={h.id} className="border-b">
+                  <td className="p-2">{h.filename}</td>
+                  <td className="p-2">{h.total}</td>
+                  <td className="p-2">{h.critical}</td>
+                  <td className="p-2">{h.high}</td>
+                  <td className="p-2">{h.medium}</td>
+                  <td className="p-2">{h.low}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {history.length === 0 && <p className={`text-sm ${muted} mt-3`}>No saved risk assessments yet.</p>}
+        </div>
+      ) : !results ? (
         <p className={`text-sm ${muted}`}>Upload a firewall log CSV to populate the control center.</p>
       ) : (
         <>
@@ -202,7 +260,6 @@ function RiskScoring() {
               <p className="text-3xl font-bold mt-3">{results.avgScore}</p>
               <p className={`text-xs ${muted}`}>Current batch risk index</p>
             </div>
-
             <div className={`xl:col-span-2 ${bgCard} border ${border} rounded-lg p-4`}>
               <p className="text-xs font-semibold mb-2">RISK SCORE DISTRIBUTION</p>
               <ResponsiveContainer width="100%" height={180}>
@@ -217,7 +274,6 @@ function RiskScoring() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-
             <div className={`${bgCard} border ${border} rounded-lg p-4`}>
               <p className="text-xs font-semibold mb-2">PRIORITY REGISTER</p>
               <ResponsiveContainer width="100%" height={120}>

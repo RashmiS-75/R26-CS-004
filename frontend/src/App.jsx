@@ -3,9 +3,12 @@ import {
   LayoutDashboard, Shield, FileText, AlertTriangle,
   BarChart3, Settings, Bell, Moon, Sun
 } from 'lucide-react'
+import Dashboard from './pages/Dashboard'
 import audixaLogo from './assets/g.png'
 import RiskScoring from './pages/RiskScoring'
 import Login from './pages/Login'
+import Recommendation from './pages/Recommendation'
+import Compliance from './pages/Compliance'
 import BatchAnalysisPage from './features/log-classification/pages/BatchAnalysisPage'
 
 function App() {
@@ -73,8 +76,8 @@ function App() {
           <NavItem icon={<LayoutDashboard size={17} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
           <NavItem icon={<Shield size={17} />} label="Risk Scoring" active={activeTab === 'risk-scoring'} onClick={() => setActiveTab('risk-scoring')} />
           <NavItem icon={<FileText size={17} />} label="Log Classification" active={activeTab === 'log-classification'} onClick={() => setActiveTab('log-classification')} />
-          <NavItem icon={<BarChart3 size={17} />} label="Reports" active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
-          <NavItem icon={<AlertTriangle size={17} />} label="Alerts" active={activeTab === 'alerts'} onClick={() => setActiveTab('alerts')} />
+          <NavItem icon={<BarChart3 size={17} />} label="Recommendations" active={activeTab === 'recommendations'} onClick={() => setActiveTab('recommendations')} />
+          <NavItem icon={<AlertTriangle size={17} />} label="Compliance" active={activeTab === 'compliance'} onClick={() => setActiveTab('compliance')} />
           <NavItem icon={<Settings size={17} />} label="Settings" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
         </nav>
         <div className="px-5 py-4 text-[11px] text-gray-500 border-t border-[#2E3B28]">
@@ -109,28 +112,24 @@ function App() {
         </header>
 
         <main className={`flex-1 overflow-y-auto ${activeTab === 'risk-scoring' ? 'p-0' : 'p-7'}`}>
-          {activeTab === 'dashboard' && (
-            <div className="space-y-6">
-              <div>
-                <h3 className={`text-2xl font-semibold ${textPrimary}`}>Audixa Control Center</h3>
-                <p className={`text-sm ${textSecondary} mt-1`}>
-                  Welcome, {user.name}. Firewall audit analytics platform for log assessment, risk scoring, compliance and recommendations.
-                </p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                <StatusCard title="Risk Scoring" value="Connected" owner="it22156860" bgCard={bgCard} borderColor={borderColor} textPrimary={textPrimary} textSecondary={textSecondary} />
-                <StatusCard title="Log Classification" value="Connected" owner="it22231000" bgCard={bgCard} borderColor={borderColor} textPrimary={textPrimary} textSecondary={textSecondary} />
-                <StatusCard title="Compliance" value="In integration" owner="it22167064" bgCard={bgCard} borderColor={borderColor} textPrimary={textPrimary} textSecondary={textSecondary} />
-                <StatusCard title="Recommendation" value="In integration" owner="it22111692" bgCard={bgCard} borderColor={borderColor} textPrimary={textPrimary} textSecondary={textSecondary} />
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'risk-scoring' && <RiskScoring />}
+     
+         <div className={activeTab === 'risk-scoring' ? '' : 'hidden'}>
+          <RiskScoring />
+        </div>
 
           <div className={activeTab === 'log-classification' ? '' : 'hidden'}>
             <BatchAnalysisPage darkMode={darkMode} />
           </div>
+
+          <div className={activeTab === 'recommendations' ? '' : 'hidden'}>
+            <Recommendation />
+          </div>
+
+          <div className={activeTab === 'compliance' ? '' : 'hidden'}>
+            <Compliance />
+          </div>              
+
+         {activeTab === 'dashboard' && <Dashboard user={user} darkMode={darkMode} />}
 
           {activeTab === 'reports' && (
             <Placeholder title="Reports" desc="Shared reports module placeholder." icon={<BarChart3 size={48} />} darkMode={darkMode} />
