@@ -1,0 +1,29 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# VS Code
+.vscode/
+.idea/
+
+# Environment / secrets
+.env
+
+# Training and analysis datasets
+dataset/
+
+# Training / analysis source files
+src/
+
+# Generated results
+results/
+
+# Uploaded runtime files
+uploads/
+
+# Temporary files
+*.tmp
+*.log
