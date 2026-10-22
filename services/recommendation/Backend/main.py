@@ -35,6 +35,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
+        "http://localhost:5177",
         "http://127.0.0.1:3000",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
@@ -50,8 +51,16 @@ app.add_middleware(
 # PATHS
 # ================================================================
 ROOT = Path(__file__).resolve().parents[3]
-MODEL_DIR = Path("/Users/shanaz/Documents/Research/R26-CS-004-main/model/recommendation-model")
+
+from pathlib import Path
+
+MODEL_DIR = (
+    Path(__file__).resolve().parents[1]
+    / "recommendation-model"
+)
 MODEL_PATH = str(MODEL_DIR / "lstm_rec_model_50.keras")
+
+
 SCALER_PATH = str(MODEL_DIR / "scaler.pkl")
 COLUMNS_PATH = str(MODEL_DIR / "feature_columns.json")
 METADATA_PATH = str(MODEL_DIR / "lstm_metadata.json")

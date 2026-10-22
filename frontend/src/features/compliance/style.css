@@ -129,11 +129,11 @@ input {
 }
 
 .menu-item:hover {
-    background: rgba(150, 171, 65, .15);
+    background: rgb(2, 29, 2);
 }
 
 .menu-item.active {
-    background: #687f2b;
+    background: #032a0f;
 
     color: white;
 
@@ -254,7 +254,7 @@ input {
 
     background: #eff3d9;
 
-    color: #60751f;
+    color: #1f2707;
 
     display: flex;
 
@@ -592,7 +592,7 @@ input {
 }
 
 .total {
-    background: #b6c91d;
+    background: #213703;
 }
 
 .total .card-icon {
@@ -600,7 +600,7 @@ input {
 }
 
 .compliant {
-    background: #39e75f;
+    background: #137704;
 }
 
 .compliant .card-icon {
@@ -608,7 +608,7 @@ input {
 }
 
 .non-compliant {
-    background: #ee6b6e;
+    background: #4b0203;
 }
 
 .non-compliant .card-icon {
@@ -616,7 +616,7 @@ input {
 }
 
 .overall {
-    background: #f1b04c;
+    background: #9f6206;
 
     cursor: default;
 }

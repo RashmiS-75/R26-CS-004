@@ -569,6 +569,16 @@ function App() {
             );
 
 
+            localStorage.setItem('audixa-last-compliance', JSON.stringify({
+            compliance_percentage: normalized.compliance_percentage,
+            total_rules: normalized.total_rules,
+            compliant_rules: normalized.compliant_rules,
+            non_compliant_rules: normalized.non_compliant_rules,
+            configuration_name: normalized.configuration_name,
+            vendor: normalized.vendor,
+            }))
+
+
         } catch (err) {
 
             console.error(

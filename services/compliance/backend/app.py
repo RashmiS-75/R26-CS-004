@@ -69,6 +69,8 @@ app.add_middleware(
         "http://localhost:5175",
         "http://127.0.0.1:5176",
         "http://localhost:5176",
+        "http://127.0.0.1:5177",
+        "http://localhost:5177",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -94,6 +96,7 @@ SUPPORTED_EXTENSIONS = {
     ".yml",
 }
 
+MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MiB
 
 # ============================================================
 # GLOBAL MODELS
@@ -1879,98 +1882,86 @@ def analyze_dataframe(
 async def analyze_configuration(
     file: UploadFile = File(...),
 ) -> dict[str, Any]:
-
-    if not file.filename:
-
-        raise HTTPException(
-            status_code=400,
-            detail="No file was provided.",
-        )
-
-
-    filename = Path(
-        file.filename
-    ).name
-
-
-    extension = (
-        Path(filename)
-        .suffix
-        .lower()
-    )
-
-
-    if extension not in SUPPORTED_EXTENSIONS:
-
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"Unsupported file format: "
-                f"{extension}"
-            ),
-        )
-
+    """Validate and analyze a firewall configuration upload."""
+    filename = "upload"
 
     try:
+        if not file.filename or not file.filename.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="No file was provided.",
+            )
 
-        file_bytes = await file.read()
+        # Treat the client filename as untrusted input. Normalize both
+        # separator styles and retain only the basename; never use it as a path.
+        supplied_filename = file.filename.replace("\\", "/")
+        filename = Path(supplied_filename).name
+        if not filename or filename in {".", ".."}:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid filename.",
+            )
 
+        extension = Path(filename).suffix.lower()
+        if extension not in SUPPORTED_EXTENSIONS:
+            raise HTTPException(
+                status_code=400,
+                detail="Unsupported file format.",
+            )
+
+        # Read only one byte beyond the configured limit to detect oversize
+        # uploads without loading an arbitrarily large file into memory.
+        file_bytes = await file.read(MAX_UPLOAD_BYTES + 1)
+        if len(file_bytes) > MAX_UPLOAD_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail="File exceeds the 25 MiB upload limit.",
+            )
 
         if not file_bytes:
-
             raise HTTPException(
                 status_code=400,
                 detail="Uploaded file is empty.",
             )
 
+        logger.info("Starting compliance analysis for extension %s", extension)
 
-        logger.info(
-            "Starting analysis: %s",
-            filename,
-        )
+        # Parse separately so malformed input is reported as a client error,
+        # while failures in the analysis/model stage remain server errors.
+        try:
+            dataframe = read_uploaded_file(filename, file_bytes)
+        except Exception as exc:
+            logger.info(
+                "Compliance upload rejected during parsing: %s",
+                type(exc).__name__,
+            )
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "The uploaded file is invalid or does not match "
+                    "its file format."
+                ),
+            ) from None
 
-
-        dataframe = read_uploaded_file(
-            filename,
-            file_bytes,
-        )
-
-
-        analysis = analyze_dataframe(
-            dataframe
-        )
-
+        analysis = analyze_dataframe(dataframe)
 
         return {
             "success": True,
-
-            "message":
-                "Configuration analyzed successfully.",
-
-            "configuration_name":
-                filename,
-
+            "message": "Configuration analyzed successfully.",
+            "configuration_name": filename,
             **analysis,
         }
 
-
     except HTTPException:
-
         raise
-
-
-    except Exception as exc:
-
-        logger.exception(
-            "Analysis failed for %s",
-            filename,
-        )
-
-
+    except Exception:
+        logger.exception("Compliance analysis failed.")
         raise HTTPException(
             status_code=500,
-            detail=str(exc),
-        ) from exc
+            detail="Unable to process the configuration file.",
+        ) from None
+    finally:
+        await file.close()
 
 
 # ============================================================

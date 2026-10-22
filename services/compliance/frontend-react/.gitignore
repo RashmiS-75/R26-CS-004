@@ -1,0 +1,33 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment
+.env
+
+# Training / analysis dataset
+dataset/
+
+# Root training / analysis source
+/src/
+
+# Generated results
+results/
+
+# Runtime uploads
+uploads/
+
+# React
+frontend-react/node_modules/
+frontend-react/dist/
+
+# Temporary files
+*.tmp
+*.log
+
+# Analysis outputs
+leakage_analysis.txt
+target_analysis.txt

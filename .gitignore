@@ -12,3 +12,10 @@ frontend/node_modules/
 services/**/frontend/node_modules/
 dist/
 frontend/.vite/
+backend/.env
+backend/.venv/
+
+# Environment secrets for all services
+.env
+.env.*
+!.env.example

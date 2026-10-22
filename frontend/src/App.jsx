@@ -1,8 +1,22 @@
+
 import { useState, useEffect } from 'react'
 import {
-  LayoutDashboard, Shield, FileText, AlertTriangle,
-  BarChart3, Settings, Bell, Moon, Sun
+  LayoutDashboard,
+  Shield,
+  FileText,
+  AlertTriangle,
+  BarChart3,
+  Settings,
+  Bell,
+  Moon,
+  Sun,
+  LogOut,
+  Menu,
+  X,
+  ChevronRight,
+  Users,
 } from 'lucide-react'
+
 import Dashboard from './pages/Dashboard'
 import audixaLogo from './assets/g.png'
 import RiskScoring from './pages/RiskScoring'
@@ -10,143 +24,510 @@ import Login from './pages/Login'
 import Recommendation from './pages/Recommendation'
 import Compliance from './pages/Compliance'
 import BatchAnalysisPage from './features/log-classification/pages/BatchAnalysisPage'
+import UserManagement from './pages/UserManagement'
+
+const NAV_ITEMS = [
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    description: 'Platform overview',
+    icon: LayoutDashboard,
+  },
+  {
+    id: 'risk-scoring',
+    label: 'Risk Scoring',
+    description: 'Firewall risk assessment',
+    icon: Shield,
+  },
+  {
+    id: 'log-classification',
+    label: 'Log Classification',
+    description: 'Traffic log analysis',
+    icon: FileText,
+  },
+  {
+    id: 'recommendations',
+    label: 'Recommendations',
+    description: 'Risk treatment insights',
+    icon: BarChart3,
+  },
+  {
+    id: 'compliance',
+    label: 'Compliance',
+    description: 'Security control assessment',
+    icon: AlertTriangle,
+  },
+  {
+    id: 'user-management',
+    label: 'User Management',
+    description: 'Create and manage accounts',
+    icon: Users,
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    description: 'Account preferences',
+    icon: Settings,
+  },
+]
+
+const PAGE_DETAILS = {
+  dashboard: {
+    title: 'Dashboard',
+    subtitle: 'Your cybersecurity audit workspace',
+  },
+  'risk-scoring': {
+    title: 'Risk Scoring Engine',
+    subtitle: 'Firewall log risk assessment',
+  },
+  'log-classification': {
+    title: 'Log Classification Engine',
+    subtitle: 'Firewall traffic classification and analysis',
+  },
+  recommendations: {
+    title: 'Recommendations',
+    subtitle: 'Actionable insights for risk treatment',
+  },
+  compliance: {
+    title: 'Compliance',
+    subtitle: 'Security control and compliance assessment',
+  },
+  'user-management': {
+    title: 'User Management',
+    subtitle: 'Create and assign access roles for Audixa accounts',
+  },
+  settings: {
+    title: 'Settings',
+    subtitle: 'Manage your account and preferences',
+  },
+  reports: {
+    title: 'Reports',
+    subtitle: 'Review generated audit reports',
+  },
+  alerts: {
+    title: 'Alerts',
+    subtitle: 'Monitor alerts and notifications',
+  },
+}
+
+function readStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem('audixa-user')) || null
+  } catch {
+    return null
+  }
+}
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
-  const [darkMode, setDarkMode] = useState(false)
-  const [user, setUser] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('audixa-user')) || null
-    } catch {
-      return null
-    }
+
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('audixa-dark-mode') === 'true'
   })
 
+  const [user, setUser] = useState(readStoredUser)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
   useEffect(() => {
-    const saved = localStorage.getItem('audixa-dark-mode')
-    if (saved === 'true') setDarkMode(true)
+    localStorage.setItem('audixa-dark-mode', String(darkMode))
+  }, [darkMode])
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode)
+  }, [darkMode])
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setUser(null)
+      setActiveTab('dashboard')
+      setSidebarOpen(false)
+    }
+
+    window.addEventListener('audixa:unauthorized', handleUnauthorized)
+
+    return () => {
+      window.removeEventListener(
+        'audixa:unauthorized',
+        handleUnauthorized
+      )
+    }
   }, [])
 
   useEffect(() => {
-    localStorage.setItem('audixa-dark-mode', darkMode)
-  }, [darkMode])
+    setSidebarOpen(false)
+  }, [activeTab])
+
+  // Prevent a non-admin user from opening the admin page
+  // through a manually selected frontend tab.
+  useEffect(() => {
+    if (
+      activeTab === 'user-management' &&
+      user?.role?.toLowerCase() !== 'admin'
+    ) {
+      setActiveTab('dashboard')
+    }
+  }, [activeTab, user])
+
+  const handleLogin = (loggedInUser) => {
+    setUser(loggedInUser)
+
+    if (loggedInUser) {
+      localStorage.setItem(
+        'audixa-user',
+        JSON.stringify(loggedInUser)
+      )
+    }
+  }
 
   const handleLogout = () => {
     localStorage.removeItem('audixa-user')
     setUser(null)
     setActiveTab('dashboard')
+    setSidebarOpen(false)
   }
+
+  const toggleDarkMode = () => {
+    setDarkMode((current) => !current)
+  }
+
+  const page = PAGE_DETAILS[activeTab] || PAGE_DETAILS.dashboard
 
   const bgMain = darkMode ? 'bg-[#0F1410]' : 'bg-[#F4F5F7]'
   const bgCard = darkMode ? 'bg-[#1A2218]' : 'bg-white'
-  const borderColor = darkMode ? 'border-[#2A3526]' : 'border-gray-200'
-  const textPrimary = darkMode ? 'text-gray-100' : 'text-gray-900'
-  const textSecondary = darkMode ? 'text-gray-400' : 'text-gray-500'
+
+  const borderColor = darkMode
+    ? 'border-[#2A3526]'
+    : 'border-gray-200'
+
+  const textPrimary = darkMode
+    ? 'text-gray-100'
+    : 'text-gray-900'
+
+  const textSecondary = darkMode
+    ? 'text-gray-400'
+    : 'text-gray-500'
+
   const headerBg = darkMode ? 'bg-[#1A2218]' : 'bg-white'
 
-  const pageTitle = {
-    dashboard: 'Audixa Platform',
-    'risk-scoring': 'Risk Scoring Engine',
-    'log-classification': 'Log Classification Engine',
-    reports: 'Reports',
-    alerts: 'Alerts',
-    settings: 'Settings',
-  }
-
-  const pageSubtitle = {
-    dashboard: 'Firewall Audit Analytics • Shared System Shell',
-    'risk-scoring': 'Firewall log risk assessment • Audixa',
-    'log-classification': 'Firewall log classification module • Audixa',
-    reports: 'System reports module • Audixa',
-    alerts: 'Alerts and notifications • Audixa',
-    settings: 'Account and platform settings • Audixa',
-  }
-
   if (!user) {
-    return <Login onLogin={setUser} />
+    return <Login onLogin={handleLogin} />
   }
 
   return (
-    <div className={`flex h-screen ${bgMain} ${textPrimary} font-sans transition-colors duration-300`}>
-      <aside className="w-64 bg-[#101A14] text-white flex flex-col shadow-xl">
-        <div className="bg-white h-20 px-3 flex items-center justify-center border-b border-gray-200">
-          <img src={audixaLogo} alt="Audixa Logo" className="h-14 w-auto max-w-[230px] object-contain" />
+    <div
+      className={`flex h-screen overflow-hidden ${bgMain} ${textPrimary} font-sans transition-colors duration-300`}
+    >
+      {/* Mobile sidebar backdrop */}
+      {sidebarOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation menu"
+          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`
+          fixed inset-y-0 left-0 z-50
+          flex w-64 flex-col
+          bg-[#101A14] text-white shadow-xl
+          transition-transform duration-300
+          lg:static lg:z-auto lg:translate-x-0
+          ${
+            sidebarOpen
+              ? 'translate-x-0'
+              : '-translate-x-full'
+          }
+        `}
+      >
+        {/* Brand */}
+        <div className="flex h-20 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4">
+          <img
+            src={audixaLogo}
+            alt="Audixa"
+            className="h-14 w-auto max-w-[210px] object-contain"
+          />
+
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close navigation"
+            className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 lg:hidden"
+          >
+            <X size={19} />
+          </button>
         </div>
-        <nav className="flex-1 px-3 py-5 space-y-1">
-          <NavItem icon={<LayoutDashboard size={17} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-          <NavItem icon={<Shield size={17} />} label="Risk Scoring" active={activeTab === 'risk-scoring'} onClick={() => setActiveTab('risk-scoring')} />
-          <NavItem icon={<FileText size={17} />} label="Log Classification" active={activeTab === 'log-classification'} onClick={() => setActiveTab('log-classification')} />
-          <NavItem icon={<BarChart3 size={17} />} label="Recommendations" active={activeTab === 'recommendations'} onClick={() => setActiveTab('recommendations')} />
-          <NavItem icon={<AlertTriangle size={17} />} label="Compliance" active={activeTab === 'compliance'} onClick={() => setActiveTab('compliance')} />
-          <NavItem icon={<Settings size={17} />} label="Settings" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
+
+        {/* Navigation */}
+        <nav
+          aria-label="Main navigation"
+          className="flex-1 overflow-y-auto px-3 py-6"
+        >
+          <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+            Workspace
+          </p>
+
+          <div className="space-y-1">
+            {NAV_ITEMS.filter(
+              (item) =>
+                item.id !== 'user-management' ||
+                user.role?.toLowerCase() === 'admin'
+            ).map((item) => (
+              <NavItem
+                key={item.id}
+                item={item}
+                active={activeTab === item.id}
+                onClick={() => setActiveTab(item.id)}
+              />
+            ))}
+          </div>
+
+          <div className="my-6 border-t border-[#2E3B28]" />
+
+          <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+            Other
+          </p>
+
+          <div className="space-y-1">
+            <NavItem
+              item={{
+                id: 'reports',
+                label: 'Reports',
+                description: 'Audit reporting',
+                icon: BarChart3,
+              }}
+              active={activeTab === 'reports'}
+              onClick={() => setActiveTab('reports')}
+            />
+
+            <NavItem
+              item={{
+                id: 'alerts',
+                label: 'Alerts',
+                description: 'Security notifications',
+                icon: Bell,
+              }}
+              active={activeTab === 'alerts'}
+              onClick={() => setActiveTab('alerts')}
+            />
+          </div>
         </nav>
-        <div className="px-5 py-4 text-[11px] text-gray-500 border-t border-[#2E3B28]">
-          {user.name} • {user.role}
+
+        {/* User profile */}
+        <div className="shrink-0 border-t border-[#2E3B28] p-4">
+          <div className="flex items-center gap-3 rounded-xl px-2 py-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#4A5C2E] text-sm font-semibold text-white">
+              {user.name?.[0]?.toUpperCase() || 'A'}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-gray-100">
+                {user.name || 'Audixa User'}
+              </p>
+
+              <p className="mt-0.5 truncate text-xs text-gray-400">
+                {user.role || 'User'}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              aria-label="Log out"
+              title="Log out"
+              className="shrink-0 rounded-lg p-2 text-gray-400 transition hover:bg-[#2E3B28] hover:text-white"
+            >
+              <LogOut size={17} />
+            </button>
+          </div>
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className={`h-20 ${headerBg} border-b ${borderColor} flex items-center justify-between px-8 shadow-sm transition-colors`}>
-          <div>
-            <h2 className={`text-lg font-semibold ${textPrimary}`}>{pageTitle[activeTab]}</h2>
-            <p className={`text-xs ${textSecondary}`}>{pageSubtitle[activeTab]}</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${darkMode ? 'bg-[#2A3526] text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
-              {user.role}
-            </span>
+      {/* Main application */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        {/* Header */}
+        <header
+          className={`
+            ${headerBg} border-b ${borderColor}
+            relative z-30 flex min-h-20 shrink-0
+            items-center justify-between gap-4
+            px-4 py-3 shadow-sm transition-colors
+            sm:px-6 lg:px-8
+          `}
+        >
+          <div className="flex min-w-0 items-center gap-3">
             <button
-              onClick={() => setDarkMode(!darkMode)}
-              className={`p-2 rounded-lg transition ${darkMode ? 'bg-[#2A3526] text-yellow-400 hover:bg-[#354230]' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open navigation"
+              className={`shrink-0 rounded-lg p-2 transition hover:bg-gray-100 lg:hidden ${
+                darkMode
+                  ? 'text-gray-200 hover:bg-[#2A3526]'
+                  : 'text-gray-600'
+              }`}
+            >
+              <Menu size={20} />
+            </button>
+
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h1
+                  className={`truncate text-base font-semibold sm:text-lg ${textPrimary}`}
+                >
+                  {page.title}
+                </h1>
+              </div>
+
+              <p
+                className={`mt-1 hidden truncate text-xs sm:block ${textSecondary}`}
+              >
+                {page.subtitle}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <span
+              className={`
+                hidden rounded-full px-3 py-1.5
+                text-xs font-medium sm:inline-flex
+                ${
+                  darkMode
+                    ? 'bg-[#2A3526] text-gray-300'
+                    : 'bg-gray-100 text-gray-600'
+                }
+              `}
+            >
+              {user.role || 'User'}
+            </span>
+
+            <button
+              type="button"
+              onClick={toggleDarkMode}
+              aria-label={
+                darkMode
+                  ? 'Switch to light mode'
+                  : 'Switch to dark mode'
+              }
+              title={
+                darkMode
+                  ? 'Switch to light mode'
+                  : 'Switch to dark mode'
+              }
+              className={`
+                rounded-lg p-2.5 transition
+                ${
+                  darkMode
+                    ? 'bg-[#2A3526] text-yellow-400 hover:bg-[#354230]'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }
+              `}
             >
               {darkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-            <Bell size={18} className={textSecondary} />
-            <div className="w-8 h-8 rounded-full bg-[#4A5C2E] flex items-center justify-center text-white text-sm font-semibold">
-              {user.name?.[0] || 'A'}
-            </div>
-            <button onClick={handleLogout} className={`text-xs ${textSecondary} hover:text-red-600`}>
-              Logout
+
+            <button
+              type="button"
+              aria-label="Notifications"
+              title="Notifications"
+              onClick={() => setActiveTab('alerts')}
+              className={`
+                relative rounded-lg p-2.5 transition
+                ${
+                  darkMode
+                    ? 'text-gray-300 hover:bg-[#2A3526]'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }
+              `}
+            >
+              <Bell size={18} />
+            </button>
+
+            <div className="hidden h-8 w-px bg-gray-200 sm:block" />
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('settings')}
+              aria-label="Open account settings"
+              title="Account settings"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#4A5C2E] text-sm font-semibold text-white transition hover:opacity-90"
+            >
+              {user.name?.[0]?.toUpperCase() || 'A'}
             </button>
           </div>
         </header>
 
-        <main className={`flex-1 overflow-y-auto ${activeTab === 'risk-scoring' ? 'p-0' : 'p-7'}`}>
-     
-         <div className={activeTab === 'risk-scoring' ? '' : 'hidden'}>
-          <RiskScoring />
-        </div>
+        {/* Page content */}
+        <main
+          key={activeTab}
+          id="main-content"
+          className={`
+            min-h-0 flex-1 overflow-y-auto overscroll-contain
+            ${
+              activeTab === 'risk-scoring'
+                ? 'p-0'
+                : 'p-4 sm:p-6 lg:p-7'
+            }
+          `}
+        >
+          {activeTab === 'dashboard' && (
+            <Dashboard user={user} darkMode={darkMode} />
+          )}
 
-          <div className={activeTab === 'log-classification' ? '' : 'hidden'}>
+          {activeTab === 'risk-scoring' && <RiskScoring />}
+
+          {activeTab === 'log-classification' && (
             <BatchAnalysisPage darkMode={darkMode} />
-          </div>
+          )}
 
-          <div className={activeTab === 'recommendations' ? '' : 'hidden'}>
-            <Recommendation />
-          </div>
+          {activeTab === 'recommendations' && <Recommendation />}
 
-          <div className={activeTab === 'compliance' ? '' : 'hidden'}>
-            <Compliance />
-          </div>              
+          {activeTab === 'compliance' && <Compliance />}
 
-         {activeTab === 'dashboard' && <Dashboard user={user} darkMode={darkMode} />}
+          {/* Admin-only User Management */}
+          {activeTab === 'user-management' &&
+            user.role?.toLowerCase() === 'admin' && (
+              <UserManagement />
+            )}
 
           {activeTab === 'reports' && (
-            <Placeholder title="Reports" desc="Shared reports module placeholder." icon={<BarChart3 size={48} />} darkMode={darkMode} />
+            <Placeholder
+              title="Reports"
+              desc="Your audit reports and analysis summaries will be available here."
+              icon={<BarChart3 size={42} />}
+              darkMode={darkMode}
+              bgCard={bgCard}
+              borderColor={borderColor}
+              textPrimary={textPrimary}
+              textSecondary={textSecondary}
+            />
           )}
+
           {activeTab === 'alerts' && (
-            <Placeholder title="Alerts" desc="Shared alerts module placeholder." icon={<AlertTriangle size={48} />} darkMode={darkMode} />
+            <Placeholder
+              title="Alerts"
+              desc="Security alerts and platform notifications will be available here."
+              icon={<AlertTriangle size={42} />}
+              darkMode={darkMode}
+              bgCard={bgCard}
+              borderColor={borderColor}
+              textPrimary={textPrimary}
+              textSecondary={textSecondary}
+            />
           )}
+
           {activeTab === 'settings' && (
-            <div className={`${bgCard} border ${borderColor} rounded-xl p-6 max-w-lg`}>
-              <h3 className={`text-lg font-semibold ${textPrimary}`}>Account</h3>
-              <p className={`text-sm ${textSecondary} mt-3`}>Name: {user.name}</p>
-              <p className={`text-sm ${textSecondary}`}>Username: {user.username}</p>
-              <p className={`text-sm ${textSecondary}`}>Role: {user.role}</p>
-              <button onClick={handleLogout} className="mt-5 px-4 py-2 text-sm rounded-lg bg-[#7F1D1D] text-white">
-                Logout
-              </button>
-            </div>
+            <SettingsPage
+              user={user}
+              darkMode={darkMode}
+              bgCard={bgCard}
+              borderColor={borderColor}
+              textPrimary={textPrimary}
+              textSecondary={textSecondary}
+              onLogout={handleLogout}
+            />
           )}
         </main>
       </div>
@@ -154,36 +535,196 @@ function App() {
   )
 }
 
-function NavItem({ icon, label, active = false, onClick }) {
+function NavItem({ item, active, onClick }) {
+  const Icon = item.icon
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={active ? 'page' : undefined}
+      className={`
+        group flex w-full items-center gap-3
+        rounded-lg px-3 py-3 text-left
+        transition-all duration-200
+        focus-visible:outline-none focus-visible:ring-2
+        focus-visible:ring-[#4A5C2E]
+        ${
+          active
+            ? 'bg-[#4A5C2E] text-white shadow-sm'
+            : 'text-gray-300 hover:bg-[#2E3B28] hover:text-white'
+        }
+      `}
+    >
+      <Icon
+        size={18}
+        strokeWidth={active ? 2.2 : 1.8}
+        className="shrink-0"
+      />
+
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium">
+          {item.label}
+        </span>
+
+        <span
+          className={`mt-0.5 block truncate text-[10px] ${
+            active
+              ? 'text-gray-200'
+              : 'text-gray-500 group-hover:text-gray-300'
+          }`}
+        >
+          {item.description}
+        </span>
+      </span>
+
+      {active && (
+        <ChevronRight
+          size={15}
+          className="shrink-0 text-gray-200"
+        />
+      )}
+    </button>
+  )
+}
+
+function SettingsPage({
+  user,
+  darkMode,
+  bgCard,
+  borderColor,
+  textPrimary,
+  textSecondary,
+  onLogout,
+}) {
+  return (
+    <div className="mx-auto w-full max-w-4xl space-y-6">
+      <div>
+        <h2 className={`text-xl font-semibold ${textPrimary}`}>
+          Account settings
+        </h2>
+
+        <p className={`mt-1 text-sm ${textSecondary}`}>
+          Review your account information and session.
+        </p>
+      </div>
+
+      <section
+        className={`${bgCard} rounded-xl border ${borderColor} p-5 shadow-sm sm:p-6`}
+      >
+        <div className={`flex items-center gap-4 border-b ${borderColor} pb-5`}>
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#4A5C2E] text-xl font-semibold text-white">
+            {user.name?.[0]?.toUpperCase() || 'A'}
+          </div>
+
+          <div className="min-w-0">
+            <h3 className={`truncate text-base font-semibold ${textPrimary}`}>
+              {user.name || 'Audixa User'}
+            </h3>
+
+            <p className={`mt-1 text-sm ${textSecondary}`}>
+              {user.role || 'User'}
+            </p>
+          </div>
+        </div>
+
+        <div className="divide-y divide-gray-200">
+          <AccountRow
+            label="Full name"
+            value={user.name}
+            textPrimary={textPrimary}
+            textSecondary={textSecondary}
+          />
+
+          <AccountRow
+            label="Username"
+            value={user.username}
+            textPrimary={textPrimary}
+            textSecondary={textSecondary}
+          />
+
+          <AccountRow
+            label="Role"
+            value={user.role}
+            textPrimary={textPrimary}
+            textSecondary={textSecondary}
+          />
+        </div>
+
+        <button
+          type="button"
+          onClick={onLogout}
+          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[#7F1D1D] px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90"
+        >
+          <LogOut size={16} />
+          Logout
+        </button>
+      </section>
+    </div>
+  )
+}
+
+function AccountRow({
+  label,
+  value,
+  textPrimary,
+  textSecondary,
+}) {
+  return (
+    <div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+      <span className={`text-sm ${textSecondary}`}>
+        {label}
+      </span>
+
+      <span className={`break-all text-sm font-medium sm:text-right ${textPrimary}`}>
+        {value || 'Not provided'}
+      </span>
+    </div>
+  )
+}
+
+function Placeholder({
+  title,
+  desc,
+  icon,
+  darkMode,
+  bgCard,
+  borderColor,
+  textPrimary,
+  textSecondary,
+}) {
   return (
     <div
-      onClick={onClick}
-      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-sm transition-all ${
-        active ? 'bg-[#4A5C2E] text-white font-medium' : 'text-gray-300 hover:bg-[#2E3B28] hover:text-white'
-      }`}
+      className={`
+        flex min-h-[420px] items-center justify-center
+        rounded-xl border ${borderColor} ${bgCard}
+        px-5 py-12 text-center shadow-sm
+      `}
     >
-      {icon}
-      <span>{label}</span>
-    </div>
-  )
-}
+      <div className="flex max-w-md flex-col items-center">
+        <div
+          className={`
+            mb-5 flex h-16 w-16 items-center justify-center
+            rounded-2xl
+            ${darkMode ? 'bg-[#2A3526]' : 'bg-gray-100'}
+            ${darkMode ? 'text-gray-300' : 'text-gray-500'}
+          `}
+        >
+          {icon}
+        </div>
 
-function StatusCard({ title, value, owner, bgCard, borderColor, textPrimary, textSecondary }) {
-  return (
-    <div className={`${bgCard} border ${borderColor} rounded-xl p-5 shadow-sm`}>
-      <p className={`text-sm ${textSecondary}`}>{title}</p>
-      <p className={`text-lg font-semibold mt-2 ${textPrimary}`}>{value}</p>
-      <p className={`text-xs mt-2 ${textSecondary}`}>Owner: {owner}</p>
-    </div>
-  )
-}
+        <h2 className={`text-lg font-semibold ${textPrimary}`}>
+          {title}
+        </h2>
 
-function Placeholder({ title, desc, icon, darkMode }) {
-  return (
-    <div className={`flex flex-col items-center justify-center py-32 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-      <div className="opacity-40 mb-4">{icon}</div>
-      <p className={`text-lg font-medium ${darkMode ? 'text-gray-300' : ''}`}>{title}</p>
-      <p className="text-sm mt-1 text-center max-w-md">{desc}</p>
+        <p className={`mt-2 text-sm leading-6 ${textSecondary}`}>
+          {desc}
+        </p>
+
+        <span className="mt-5 rounded-full bg-[#4A5C2E]/10 px-3 py-1 text-xs font-medium text-[#4A5C2E]">
+          Coming soon
+        </span>
+      </div>
     </div>
   )
 }

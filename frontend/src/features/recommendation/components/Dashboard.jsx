@@ -11,7 +11,7 @@ import {
 } from 'recharts'
 
 const C = {
-  accent  : '#aa3bff',
+  accent  : '#0e3313',
   accentBg: 'rgba(170,59,255,0.07)',
   accentBr: 'rgba(170,59,255,0.25)',
   bg      : '#F4F5F7',

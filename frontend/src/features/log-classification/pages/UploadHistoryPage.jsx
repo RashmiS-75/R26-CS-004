@@ -81,7 +81,7 @@ export default function UploadHistoryPage({ darkMode = false, onBackToUpload }) 
 
       {selected ? (
         <div className="space-y-6">
-          <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-[#4A5C2E]/10 border border-[#4A5C2E]/30 text-xs">
+          <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-[#4A5C2E]/10 border border-[#4A5C2E]/30 text-[15px]">
             <HistoryIcon className="w-4 h-4 text-[#4A5C2E] shrink-0" />
             <span className={`font-medium ${textBody}`}>
               Viewing <span className="font-bold font-mono text-[#4A5C2E]">{selected.filename}</span> — uploaded{' '}
